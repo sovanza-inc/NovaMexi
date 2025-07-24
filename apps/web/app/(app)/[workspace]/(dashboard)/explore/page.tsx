@@ -15,6 +15,7 @@ import {
 } from '@chakra-ui/react'
 import { Page, PageBody } from '@saas-ui-pro/react'
 import { useState } from 'react'
+import { PageHeader } from '#features/common/components/page-header'
 
 const hints = [
   'A fluffy panda in sunglasses dances on snowy peak',
@@ -42,6 +43,9 @@ export default function ExplorePage() {
 
   return (
     <Page>
+      <PageHeader
+        title="Explore"
+      />
       <PageBody>
         <Container 
           maxW="container.xl" 

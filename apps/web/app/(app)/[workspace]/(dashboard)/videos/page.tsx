@@ -19,6 +19,7 @@ import { Page, PageBody } from '@saas-ui-pro/react'
 import { useState } from 'react'
 import { LuDownload } from 'react-icons/lu'
 import { FaCoins } from 'react-icons/fa6'
+import { PageHeader } from '#features/common/components/page-header'
 
 const resolutionOptions = [
   { label: '480p', value: '480p' },
@@ -62,6 +63,9 @@ export default function VideoPage() {
 
   return (
     <Page>
+      <PageHeader
+        title="Videos"
+      />
       <PageBody>
         <Container maxW="container.xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
           <VStack spacing={{ base: 4, md: 6 }} align="stretch">
