@@ -38,6 +38,7 @@ export default function ExplorePage() {
 
   const cardBg = useColorModeValue('white', 'gray.800')
   const hintBg = useColorModeValue('purple.50', 'whiteAlpha.100')
+  const hintHoverBg = useColorModeValue('purple.100', 'whiteAlpha.200')
 
   return (
     <Page>
@@ -133,7 +134,7 @@ export default function ExplorePage() {
                     p={{ base: 3, md: 4 }}
                     bg={hintBg}
                     cursor="pointer"
-                    _hover={{ bg: useColorModeValue('purple.100', 'whiteAlpha.200') }}
+                    _hover={{ bg: hintHoverBg }}
                     onClick={() => setPrompt(hint)}
                     fontSize={{ base: "sm", md: "md" }}
                     transition="all 0.2s"
