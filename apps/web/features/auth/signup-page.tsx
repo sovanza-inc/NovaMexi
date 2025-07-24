@@ -46,17 +46,18 @@ export const SignupPage = () => {
   }
 
   return (
-    <Stack flex="1" direction="row" height="$100vh">
+    <Stack flex="1" direction="row" height="$100vh" gap="0">
       <Stack
         flex="1"
         alignItems="center"
         justify="center"
         direction="column"
-        spacing="8"
+        bgGradient="linear(270deg, #330D38 0%, #300A4D 50%, #140E21 75%, #140E21 100%)"
         // bgImage="url('/img/onboarding/DASH.png')"
         bgSize="cover"
         bgRepeat="round"
         position="relative"
+        color="white"
         _before={{
           content: '""',
           position: 'absolute',
@@ -126,12 +127,11 @@ export const SignupPage = () => {
           </Form>
         </Container>
 
-        <Text color="muted" position="relative" zIndex={1}>
+        <Text color="white" position="relative" zIndex={1}>
           Already have an account?{' '}
           <Link href="/login" color="#8C52FF">
             Login
           </Link>
-          .
         </Text>
       </Stack>
       <Stack flex="1" bgGradient="linear(270deg, #330D38 0%, #300A4D 50%, #140E21 75%, #140E21 100%)"

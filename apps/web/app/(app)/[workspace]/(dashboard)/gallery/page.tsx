@@ -10,6 +10,7 @@ import {
   WrapItem,
 } from '@chakra-ui/react'
 import { Page, PageBody } from '@saas-ui-pro/react'
+import { PageHeader } from '#features/common/components/page-header'
 
 const galleryImages = [
   {
@@ -37,6 +38,9 @@ const galleryImages = [
 export default function GalleryPage() {
   return (
     <Page>
+      <PageHeader
+        title="Gallery"
+      />
       <PageBody>
         <Container maxW="container.xl" py={{ base: 4, md: 8 }} px={{ base: 4, md: 8 }}>
           <VStack spacing={{ base: 4, md: 6 }} align="stretch">
