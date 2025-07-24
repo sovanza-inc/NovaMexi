@@ -36,11 +36,6 @@ export default function ExplorePage() {
     }, 2000)
   }
 
-  const bgGradient = useColorModeValue(
-    'linear(to-r, purple.100, purple.200)',
-    'linear(270deg, #330D38 0%, #300A4D 50%, #140E21 75%, #140E21 100%)'
-  )
-
   const cardBg = useColorModeValue('white', 'gray.800')
   const hintBg = useColorModeValue('purple.50', 'whiteAlpha.100')
 
@@ -73,7 +68,7 @@ export default function ExplorePage() {
                 color="gray.500"
                 px={{ base: 2, md: 0 }}
               >
-                Type your idea and click "Create" to get a video
+                Type your idea and click &quot;Create&quot; to get a video
               </Text>
             </Box>
 
