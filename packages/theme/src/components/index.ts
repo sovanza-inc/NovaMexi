@@ -8,12 +8,27 @@ export const components = {
   SuiPage: pageTheme,
   Button: {
     defaultProps: {
-      colorScheme: 'green',
+      colorScheme: 'purple',
+    },
+    variants: {
+      outline: {
+        borderColor: '#8C52FF',
+        _hover: {
+          borderColor: '#8C52FF',
+        },
+        _active: {
+          borderColor: '#8C52FF',
+        },
+        _focus: {
+          borderColor: '#8C52FF',
+          boxShadow: '0 0 0 1px #8C52FF',
+        },
+      },
     },
   },
   SubmitButton: {
     defaultProps: {
-      colorScheme: 'green',
+      colorScheme: 'purple',
     },
   },
   Input: {
