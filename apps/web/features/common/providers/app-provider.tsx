@@ -28,17 +28,28 @@ const colorModeManager: StorageManager = {
   type: 'cookie',
   ssr: true,
   get: (initialColorMode?: ColorMode): ColorMode | undefined => {
-    const storedColorMode = getCookie('chakra-ui-color-mode') as
-      | ColorMode
-      | undefined
+    try {
+      const storedColorMode = getCookie('chakra-ui-color-mode') as
+        | ColorMode
+        | undefined
 
-    return storedColorMode ? storedColorMode : initialColorMode
+      return storedColorMode || initialColorMode || 'dark'
+    } catch {
+      return initialColorMode || 'dark'
+    }
   },
   set: (value: string) => {
-    setCookie('chakra-ui-color-mode', value, {
-      maxAge: 31536000,
-      path: '/',
-    })
+    try {
+      setCookie('chakra-ui-color-mode', value, {
+        maxAge: 31536000, // 1 year
+        path: '/',
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : undefined,
+      })
+    } catch (error) {
+      console.warn('Failed to set color mode cookie:', error)
+    }
   },
 }
 
@@ -51,6 +62,13 @@ export interface AppProviderProps {
 export const AppProvider: React.FC<AppProviderProps> = (props) => {
   const { onError, initialColorMode, children } = props
 
+  React.useEffect(() => {
+    // Force set the initial color mode on mount
+    if (initialColorMode) {
+      colorModeManager.set(initialColorMode)
+    }
+  }, [initialColorMode])
+
   return (
     <IconContext.Provider value={{ className: 'react-icon', size: '1.1em' }}>
       <SaasProvider
@@ -60,7 +78,8 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
           ...theme,
           config: {
             ...theme.config,
-            initialColorMode,
+            initialColorMode: initialColorMode || 'dark',
+            useSystemColorMode: false,
           },
         }}
         colorModeManager={colorModeManager}
