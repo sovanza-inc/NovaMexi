@@ -11,13 +11,8 @@ import {
   Spinner,
 } from '@chakra-ui/react'
 import { useCurrentWorkspace } from '#features/common/hooks/use-current-workspace'
-import { QuestionnaireForm } from '#components/Questionnaire/QuestionnaireForm'
 
-interface QuestionnaireEditViewProps {
-  onClose?: () => void
-}
-
-export default function QuestionnaireEditView({ onClose }: QuestionnaireEditViewProps) {
+export default function QuestionnaireEditView() {
   const toast = useToast()
   const [workspace] = useCurrentWorkspace()
   const [isLoading, setIsLoading] = React.useState(true)
@@ -64,30 +59,6 @@ export default function QuestionnaireEditView({ onClose }: QuestionnaireEditView
     }
   }
 
-  const handleEditComplete = async () => {
-    try {
-      setIsEditing(false)
-      await fetchQuestionnaireResponses()
-      toast({
-        title: 'Success',
-        description: 'Your responses have been updated successfully.',
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      })
-      if (onClose) onClose()
-    } catch (error) {
-      console.error('Error completing edit:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to refresh the updated responses. Please reload the page.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      })
-    }
-  }
-
   if (isLoading) {
     return (
       <Box p={8} textAlign="center">
@@ -98,7 +69,14 @@ export default function QuestionnaireEditView({ onClose }: QuestionnaireEditView
   }
 
   if (isEditing) {
-    return <QuestionnaireForm onComplete={handleEditComplete} initialData={responses} />
+    return (
+      <Box p={8} textAlign="center">
+        <Text>Editing functionality is currently unavailable.</Text>
+        <Button mt={4} onClick={() => setIsEditing(false)}>
+          Back to View
+        </Button>
+      </Box>
+    )
   }
 
   const formatDate = (dateString: string) => {
