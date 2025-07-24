@@ -19,13 +19,13 @@ const socialLinks: SocialLink[] = [
   {
     title: 'Follow us on X',
     description: 'Regular posts with updates and tips.',
-    href: 'https://x.com/saas_js',
-    label: '@saas_js',
+    href: 'https://x.com/novamexi',
+    label: 'Follow us on X',
   },
   {
     title: 'Join our Discord community',
     description: 'Chat with other developers and founders.',
-    href: 'https://saas-ui.dev/discord',
+    href: 'https://discord.gg/novamexi',
     label: 'Join Discord',
   },
 ]
@@ -45,9 +45,9 @@ export const SubscribeStep = () => {
     <OnboardingStep<SubscribeFormInput>
       schema={subscribeSchema}
       title="Subscribe to updates"
-      description="Saas UI is updated regularly. These are the best ways to stay up to date."
+      description="NovaMexi is updated regularly. These are the best ways to stay up to date."
       defaultValues={{ newsletter: false }}
-      onSubmit={async (data) => {
+      onSubmit={async (data) => { 
         try {
           await mutateAsync({
             newsletter: data.newsletter,

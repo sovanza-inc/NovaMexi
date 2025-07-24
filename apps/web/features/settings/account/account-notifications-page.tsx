@@ -188,7 +188,7 @@ function AccountUpdates(props: {
     <Section variant="annotated">
       <SectionHeader
         title="Account updates"
-        description="Receive updates about Saas UI."
+        description="Receive updates about NovaMexi."
       />
       <SectionBody>
         <Card>

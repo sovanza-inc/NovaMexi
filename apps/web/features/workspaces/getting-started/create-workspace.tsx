@@ -1,3 +1,5 @@
+'use client'
+
 import { FormEvent, useRef } from 'react'
 
 import {
@@ -6,6 +8,7 @@ import {
   InputRightElement,
   Spinner,
   Text,
+  Box,
 } from '@chakra-ui/react'
 import { useDebouncedCallback, useSessionStorageValue } from '@react-hookz/web'
 import {
@@ -35,16 +38,16 @@ function SlugStatusIndicator({
   isPending,
   isAvailable,
 }: SlugValidationState) {
-  if (!isValidSlug || isAvailable === false) {
-    return <Icon as={LuCircleX} color="red.500" strokeWidth="3" />
-  }
-
   if (isPending) {
     return <Spinner size="xs" />
   }
 
-  if (isAvailable) {
+  if (isValidSlug && isAvailable) {
     return <Icon as={LuCheck} color="green.500" strokeWidth="3" />
+  }
+
+  if (isValidSlug && isAvailable === false) {
+    return <Icon as={LuCircleX} color="red.500" strokeWidth="3" />
   }
 
   return null
@@ -57,29 +60,52 @@ function WorkspaceUrlField({
   slugValidation: SlugValidationState
   onSlugChange: (value: string) => void
 }) {
+  const baseUrl = getBaseUrl()
+
   return (
-    <Field
-      name="slug"
-      type="text"
-      label="Workspace URL"
-      paddingLeft={getBaseUrl().length * 7 + 8}
-      leftAddon={
-        <InputLeftElement
-          bg="transparent"
-          width="auto"
-          ps="3"
-          pointerEvents="none"
-        >
-          <Text color="muted">{getBaseUrl()}/</Text>
-        </InputLeftElement>
-      }
-      rightAddon={
-        <InputRightElement>
-          <SlugStatusIndicator {...slugValidation} />
-        </InputRightElement>
-      }
-      onChange={(e) => onSlugChange(e.currentTarget.value)}
-    />
+    <Box>
+      <Field
+        name="slug"
+        type="text"
+        label="Workspace URL"
+        paddingLeft={`${baseUrl.length * 6}px`}
+        fontSize="sm"
+        sx={{
+          '@media screen and (min-width: 321px) and (max-width: 375px)': {
+            fontSize: '13px',
+            height: '36px',
+            paddingLeft: `${baseUrl.length * 4.5}px`,
+          }
+        }}
+        leftAddon={
+          <InputLeftElement
+            bg="transparent"
+            width="auto"
+            ps="3"
+            pointerEvents="none"
+            h="100%"
+          >
+            <Text 
+              color="muted"
+              fontSize="sm"
+              sx={{
+                '@media screen and (min-width: 321px) and (max-width: 375px)': {
+                  fontSize: '13px'
+                }
+              }}
+            >
+              {baseUrl}/
+            </Text>
+          </InputLeftElement>
+        }
+        rightAddon={
+          <InputRightElement h="100%">
+            <SlugStatusIndicator {...slugValidation} />
+          </InputRightElement>
+        }
+        onChange={(e) => onSlugChange(e.currentTarget.value)}
+      />
+    </Box>
   )
 }
 
@@ -149,24 +175,33 @@ export function CreateWorkspaceStep() {
       schema={workspaceSchema}
       formRef={formRef}
       title="Create a new workspace"
-      description="Saas UI is multi-tenant and supports workspaces with multiple teams."
+      description="NovaMexi is multi-tenant and supports workspaces with multiple teams."
       defaultValues={{ name: '', slug: '' }}
       onSubmit={handleSubmit}
       submitLabel="Create workspace"
     >
       <FormLayout>
-        <Field
-          name="name"
-          label="Workspace name"
-          autoFocus
-          rules={{ required: true }}
-          data-1p-ignore
-          onChange={(e: FormEvent<HTMLInputElement>) => {
-            const value = e.currentTarget.value
-            formRef.current?.setValue('name', value)
-            handleSlugChange(value)
-          }}
-        />
+        <Box>
+          <Field
+            name="name"
+            label="Workspace name"
+            autoFocus
+            rules={{ required: true }}
+            data-1p-ignore
+            fontSize="sm"
+            sx={{
+              '@media screen and (min-width: 321px) and (max-width: 375px)': {
+                fontSize: '13px',
+                height: '36px'
+              }
+            }}
+            onChange={(e: FormEvent<HTMLInputElement>) => {
+              const value = e.currentTarget.value
+              formRef.current?.setValue('name', value)
+              handleSlugChange(value)
+            }}
+          />
+        </Box>
         <WorkspaceUrlField
           slugValidation={slugValidationState}
           onSlugChange={handleSlugChange}
