@@ -30,7 +30,7 @@ export default function ExplorePage() {
   const handleGenerate = async () => {
     if (!prompt) return
     setIsGenerating(true)
-    // TODO: Implement video generation logic
+    // TODO: Implement video generation logic ...
     setTimeout(() => {
       setIsGenerating(false)
     }, 2000)
