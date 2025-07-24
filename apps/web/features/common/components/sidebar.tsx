@@ -61,7 +61,7 @@ export interface AppSidebarProps extends SidebarProps {}
 export const AppSidebar: React.FC<AppSidebarProps> = (props) => {
   const modals = useModals()
   const help = useHelpCenter()
-  const { hasBankConnection, isLoading } = useBankConnection()
+  useBankConnection()
 
   const [{ sidebarWidth }, setUserSettings] = useUserSettings()
 
