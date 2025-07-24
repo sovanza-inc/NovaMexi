@@ -111,7 +111,7 @@ export const HelpCenterDialog: React.FC<HelpCenterDialogProps> = (props) => {
     </BaseDrawer>
   )
 }
-
+// helpcenter card
 const HelpCard: React.FC<
   CardProps & {
     title: React.ReactNode
