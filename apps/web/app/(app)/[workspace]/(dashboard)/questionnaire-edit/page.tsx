@@ -12,11 +12,7 @@ import {
 } from '@chakra-ui/react'
 import { useCurrentWorkspace } from '#features/common/hooks/use-current-workspace'
 
-interface QuestionnaireEditViewProps {
-  onClose?: () => void
-}
-
-export default function QuestionnaireEditView({ onClose }: QuestionnaireEditViewProps) {
+export default function QuestionnaireEditView() {
   const toast = useToast()
   const [workspace] = useCurrentWorkspace()
   const [isLoading, setIsLoading] = React.useState(true)
