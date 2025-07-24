@@ -32,7 +32,6 @@ import { Route } from 'next'
 import { useRouter } from 'next/navigation'
 import {
   LuCircleHelp,
-  LuHouse,
   LuPlus,
   LuSearch,
   LuCompass,
