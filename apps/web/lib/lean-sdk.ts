@@ -176,7 +176,7 @@ export async function getTransactions(
 }
 
 // Function to create a customer
-export async function createCustomer(appName: string = 'MuhasabaAI') {
+export async function createCustomer(appName: string = 'NovaMexiAI') {
   try {
     console.log('Creating a new customer')
     

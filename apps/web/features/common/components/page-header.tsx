@@ -14,8 +14,8 @@ export const PageHeader = () => {
 
         {/* Center: Logo */}
         <Image 
-          src="/img/onboarding/muhasaba-logo.png" 
-          alt="Muhasaba Logo" 
+          src="/img/onboarding/NovaMexi-logo.png" 
+          alt="NovaMexi Logo" 
           height="32px"
         />
 

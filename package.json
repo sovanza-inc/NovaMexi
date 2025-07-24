@@ -1,9 +1,9 @@
 {
-  "name": "muhasaba-ai",
+  "name": "NovaMexi-ai",
   "version": "0.1.0",
   "description": "Production ready Next.js SaaS starter kit",
-  "repository": "https://github.com/muhasaba/muhasaba-ai",
-  "author": "Muhasaba AI <info@muhasaba.ai>",
+  "repository": "https://github.com/NovaMexi/NovaMexi-ai",
+  "author": "NovaMexi <info@NovaMexi.ai>",
   "license": "SEE LICENSE IN LICENSE",
   "private": true,
   "type": "module",

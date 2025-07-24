@@ -7,7 +7,7 @@ export const Testimonial = () => {
       <HStack mb="4" spacing="4">
         <Avatar
           bg="white"
-          src="https://avatars.githubusercontent.com/u/muhasabaai"
+          src="https://avatars.githubusercontent.com/u/NovaMexiai"
           name="Abdullah Rahman"
         />
         <Box>
@@ -15,12 +15,12 @@ export const Testimonial = () => {
             Abdullah Rahman
           </Text>
           <Text color="whiteAlpha.700" fontSize="md">
-            Islamic Finance Advisor at <Link href="https://muhasaba.ai">Muhasaba AI</Link>
+            Islamic Finance Advisor at <Link href="https://NovaMexi.ai">NovaMexi</Link>
           </Text>
         </Box>
       </HStack>
       <Text color="white" fontSize="lg">
-        &ldquo;Muhasaba AI has transformed how we manage Islamic finance operations. The Shariah-compliant insights and automated Zakat calculations have been invaluable for our clients. A must-have tool for any Muslim business owner.&rdquo;
+        &ldquo;NovaMexi has transformed how we manage Islamic finance operations. The Shariah-compliant insights and automated Zakat calculations have been invaluable for our clients. A must-have tool for any Muslim business owner.&rdquo;
       </Text>
     </Container>
   )
