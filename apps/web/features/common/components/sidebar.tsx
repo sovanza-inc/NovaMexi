@@ -36,7 +36,6 @@ import {
   LuPlus,
   LuSearch,
   LuCompass,
-  LuBell,
   LuVideo,
   LuImage,
 } from 'react-icons/lu'

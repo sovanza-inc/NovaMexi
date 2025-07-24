@@ -41,8 +41,6 @@ export const UserMenu = () => {
     })
   }
 
-  const { toggleColorMode, colorMode } = useColorMode()
-
   const help = useHelpCenter()
   const helpCommand = useHotkeysShortcut('general.help', () => {
     help.open()
