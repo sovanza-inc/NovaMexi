@@ -32,7 +32,6 @@ import { Route } from 'next'
 import { useRouter } from 'next/navigation'
 import {
   LuCircleHelp,
-  LuHouse,
   LuPlus,
   LuSearch,
   LuCompass,
@@ -139,12 +138,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = (props) => {
             <NavGroup>
               <AppSidebarLink
                 href={usePath('/')}
-                label="Dashboard"
-                icon={<LuHouse />}
-                hotkey="navigation.dashboard"
-              />
-              <AppSidebarLink
-                href={usePath('/explore')}
                 label="Explore"
                 icon={<LuCompass />}
                 hotkey="navigation.explore"

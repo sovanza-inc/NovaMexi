@@ -14,8 +14,6 @@ import { UserSettings } from '#lib/user-settings/user-settings'
 import { Provider } from './provider'
 import { Script } from './script'
 
-// Exporting hello
-
 export const metadata: Metadata = {
   title: {
     template: "%s | Muhasaba AI",
@@ -34,15 +32,27 @@ export default async function AppRootLayout({
 }) {
   const cookieStore = await cookies()
 
-  const colorMode = (cookieStore.get('chakra-ui-color-mode')?.value ??
-    'light') as 'light' | 'dark'
+  const colorMode = (cookieStore.get('chakra-ui-color-mode')?.value ?? 'dark') as 'light' | 'dark'
 
   return (
-    <html data-theme={colorMode} style={{ colorScheme: colorMode, fontFamily: 'Lato, sans-serif' }}>
-      <body className={`chakra-ui-${colorMode}`}>
+    <html 
+      lang="en" 
+      data-theme={colorMode} 
+      style={{ 
+        colorScheme: colorMode,
+        background: colorMode === 'dark' 
+          ? 'linear-gradient(270deg, #330D38 0%, #300A4D 50%, #140E21 75%, #140E21 100%)' 
+          : 'white',
+      }}
+    >
+      <body 
+        className={`chakra-ui-${colorMode}`}
+        style={{
+          background: 'transparent',
+        }}
+      >
         <Script colorMode={colorMode} />
         <Provider initialColorMode={colorMode}>{children}</Provider>
-
         <UserSettings />
       </body>
     </html>
