@@ -84,8 +84,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = (props) => {
   const isBalanceSheetActive = useActivePath('balance-sheet', { end: false })
   const isCashflowStatementActive = useActivePath('cashflow-statement', { end: false })
 
-  // Menu items should be disabled when bank connection is loading or not available
-  const _isDisabled = !isLoading && !hasBankConnection
 
   // Set the parent item to be open if any subpage is active
   React.useEffect(() => {
