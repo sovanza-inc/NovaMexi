@@ -63,30 +63,6 @@ export default function QuestionnaireEditView({ onClose }: QuestionnaireEditView
     }
   }
 
-  const handleEditComplete = async () => {
-    try {
-      setIsEditing(false)
-      await fetchQuestionnaireResponses()
-      toast({
-        title: 'Success',
-        description: 'Your responses have been updated successfully.',
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      })
-      if (onClose) onClose()
-    } catch (error) {
-      console.error('Error completing edit:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to refresh the updated responses. Please reload the page.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      })
-    }
-  }
-
   if (isLoading) {
     return (
       <Box p={8} textAlign="center">
