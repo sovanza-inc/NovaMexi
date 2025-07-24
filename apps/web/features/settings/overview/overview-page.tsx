@@ -4,7 +4,7 @@ import { Button, SimpleGrid } from '@chakra-ui/react'
 import { useBilling } from '@saas-ui-pro/billing'
 import { Section, SectionBody, SectionHeader } from '@saas-ui-pro/react'
 import { Property, PropertyList } from '@saas-ui/react'
-import { Card, CardBody, Stack, Heading, ButtonGroup } from '@chakra-ui/react'
+import { Card, CardBody, Stack, Heading } from '@chakra-ui/react'
 import {
   LuBox,
   LuBriefcase,
