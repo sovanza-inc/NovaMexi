@@ -107,16 +107,18 @@ export function SettingsOverviewPage() {
       <Section>
         <SectionHeader title="Documentation" />
         <SectionBody>
-          <SimpleGrid columns={[1, null, 3]} spacing={4}>
-            <Card>
+          <SimpleGrid columns={1} spacing={4}>
+            <Card width="full">
               <CardBody>
                 <Stack spacing="4">
                   <Heading size="sm">Documentation</Heading>
-                  <ButtonGroup>
+                  <Stack direction={{ base: 'column', md: 'row' }} spacing={{ base: '2', md: '4' }} width="full">
                     <LinkButton
                       variant="outline"
                       href="https://docs.NovaMexi.ai/overview"
                       leftIcon={<FiBook />}
+                      size={{ base: 'sm', md: 'md' }}
+                      width={{ base: 'full', md: 'auto' }}
                     >
                       Documentation
                     </LinkButton>
@@ -124,6 +126,8 @@ export function SettingsOverviewPage() {
                       variant="outline"
                       href="https://docs.NovaMexi.ai/api"
                       leftIcon={<FiCode />}
+                      size={{ base: 'sm', md: 'md' }}
+                      width={{ base: 'full', md: 'auto' }}
                     >
                       API Reference
                     </LinkButton>
@@ -131,10 +135,12 @@ export function SettingsOverviewPage() {
                       variant="outline"
                       href="https://roadmap.NovaMexi.ai"
                       leftIcon={<FiMap />}
+                      size={{ base: 'sm', md: 'md' }}
+                      width={{ base: 'full', md: 'auto' }}
                     >
                       Roadmap
                     </LinkButton>
-                  </ButtonGroup>
+                  </Stack>
                 </Stack>
               </CardBody>
             </Card>
