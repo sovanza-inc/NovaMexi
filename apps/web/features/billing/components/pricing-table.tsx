@@ -105,8 +105,6 @@ export const PricingTable: React.FC<PricingTableProps> = (props) => {
     }
   })
 
-  const initializeSubscription = api.billing.initializeSubscription.useMutation()
-
   const updatePlan = async (plan: BillingPlan) => {
     setLoading(true)
     console.log('Starting plan update:', {
@@ -116,12 +114,6 @@ export const PricingTable: React.FC<PricingTableProps> = (props) => {
       origin: window.location.origin
     })
     try {
-      // First initialize the subscription
-      await initializeSubscription.mutateAsync({
-        planId: plan.id,
-        workspaceId: workspace.id,
-      })
-
       const successUrl = `${window.location.origin}/${workspace.slug}?success=true`
       const cancelUrl = `${window.location.origin}/${workspace.slug}?canceled=true`
       
