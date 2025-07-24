@@ -84,21 +84,21 @@ export function SettingsOverviewPage() {
           <SimpleGrid columns={[1, null, 3]} spacing={4}>
             <SupportCard
               title="Start Guide"
-              description="Read how to get started with Muhasaba AI."
+              description="Read how to get started with NovaMexi."
               icon={LuCircleHelp}
-              href="https://docs.muhasaba.ai/getting-started"
+              href="https://docs.NovaMexi.ai/getting-started"
             />
             <SupportCard
               title="Features"
               description="Explore our Islamic finance features."
               icon={LuBox}
-              href="https://docs.muhasaba.ai/features"
+              href="https://docs.NovaMexi.ai/features"
             />
             <SupportCard
               title="Feedback"
               description="Share your feedback and suggestions."
               icon={LuGithub}
-              href="https://feedback.muhasaba.ai"
+              href="https://feedback.NovaMexi.ai"
             />
           </SimpleGrid>
         </SectionBody>
@@ -115,21 +115,21 @@ export function SettingsOverviewPage() {
                   <ButtonGroup>
                     <LinkButton
                       variant="outline"
-                      href="https://docs.muhasaba.ai/overview"
+                      href="https://docs.NovaMexi.ai/overview"
                       leftIcon={<FiBook />}
                     >
                       Documentation
                     </LinkButton>
                     <LinkButton
                       variant="outline"
-                      href="https://docs.muhasaba.ai/api"
+                      href="https://docs.NovaMexi.ai/api"
                       leftIcon={<FiCode />}
                     >
                       API Reference
                     </LinkButton>
                     <LinkButton
                       variant="outline"
-                      href="https://roadmap.muhasaba.ai"
+                      href="https://roadmap.NovaMexi.ai"
                       leftIcon={<FiMap />}
                     >
                       Roadmap

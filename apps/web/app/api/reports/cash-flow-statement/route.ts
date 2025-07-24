@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       // Add title and date
       pdf.setFontSize(18);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Muhasaba', margin, margin + 5);
+      pdf.text('NovaMexi', margin, margin + 5);
       
       pdf.setFontSize(14);
       pdf.text('STATEMENT OF CASH FLOWS', margin, margin + 12);

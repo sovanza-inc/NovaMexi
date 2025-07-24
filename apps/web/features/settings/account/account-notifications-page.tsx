@@ -249,7 +249,7 @@ export function AccountNotificationsPage() {
   return (
     <SettingsPage
       title="Notifications"
-      description="Receive updates about Muhasaba AI."
+      description="Receive updates about NovaMexi."
     >
       <NotificationChannels
         data={{

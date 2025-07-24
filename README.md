@@ -1,8 +1,8 @@
-# Muhasaba AI - Financial Management System
+# NovaMexi - Financial Management System
 
 ## About
 
-Muhasaba AI is a cutting-edge financial management system that combines Islamic finance principles with modern artificial intelligence. Our platform helps businesses and individuals manage their finances more effectively through smart bank integrations, automated bookkeeping, and Shariah-compliant financial insights.
+NovaMexi is a cutting-edge financial management system that combines Islamic finance principles with modern artificial intelligence. Our platform helps businesses and individuals manage their finances more effectively through smart bank integrations, automated bookkeeping, and Shariah-compliant financial insights.
 
 ## Features
 
@@ -17,11 +17,11 @@ Muhasaba AI is a cutting-edge financial management system that combines Islamic 
 
 ## Getting Started
 
-To get started with Muhasaba AI, follow these steps:
+To get started with NovaMexi, follow these steps:
 
 ```bash
 # Clone the repository
-git clone https://github.com/muhasaba/muhasaba-ai.git
+git clone https://github.com/NovaMexi/NovaMexi-ai.git
 
 # Install dependencies
 yarn install
@@ -49,20 +49,20 @@ We welcome contributions from the community. Please read our [Contributing Guide
 
 ## Social Media
 
-- Twitter: [@muhasabaai](https://twitter.com/muhasabaai)
-- LinkedIn: [Muhasaba AI](https://linkedin.com/company/muhasabaai)
-- Instagram: [@muhasabaai](https://instagram.com/muhasabaai)
+- Twitter: [@NovaMexiai](https://twitter.com/NovaMexiai)
+- LinkedIn: [NovaMexi](https://linkedin.com/company/NovaMexiai)
+- Instagram: [@NovaMexiai](https://instagram.com/NovaMexiai)
 
 ## Testimonials
 
-> "Muhasaba AI has transformed how we manage our Islamic finance operations. The Shariah-compliant insights and automated Zakat calculations have been invaluable." - Abdullah Rahman, Islamic Finance Advisor
+> "NovaMexi has transformed how we manage our Islamic finance operations. The Shariah-compliant insights and automated Zakat calculations have been invaluable." - Abdullah Rahman, Islamic Finance Advisor
 
-> "As a Muslim business owner, finding a financial management tool that aligns with Islamic principles was crucial. Muhasaba AI delivers exactly what we needed." - Fatima Hassan, CEO of Halal Ventures
+> "As a Muslim business owner, finding a financial management tool that aligns with Islamic principles was crucial. NovaMexi delivers exactly what we needed." - Fatima Hassan, CEO of Halal Ventures
 
 ## Support
 
-For support, please email support@muhasaba.ai or visit our [Help Center](https://help.muhasaba.ai).
+For support, please email support@NovaMexi.ai or visit our [Help Center](https://help.NovaMexi.ai).
 
 ## License
 
-Copyright © 2024 Muhasaba AI. All rights reserved.
+Copyright © 2024 NovaMexi. All rights reserved.

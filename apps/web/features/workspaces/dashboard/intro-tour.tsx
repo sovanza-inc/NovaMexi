@@ -29,19 +29,19 @@ type Step = {
 }
 
 export const IntroTour = () => {
-  const [tour, setTour] = useLocalStorage('muhasaba.intro-tour', false)
+  const [tour, setTour] = useLocalStorage('NovaMexi.intro-tour', false)
 
   const steps: Step[] = [
     {
       target: '[data-tour="workspaces"]',
       title: 'Workspaces',
-      content: 'Muhasaba AI supports multiple workspaces for different organizations.',
+      content: 'NovaMexi supports multiple workspaces for different organizations.',
       placement: 'right',
     },
     {
       target: '[data-tour="billing"]',
       title: 'Get Started',
-      content: 'Start managing your Islamic finances with Muhasaba AI.',
+      content: 'Start managing your Islamic finances with NovaMexi.',
       placement: 'right',
     },
   ]
@@ -64,7 +64,7 @@ export const IntroTour = () => {
         <BenefitsModal data-target="modal" hideOverlay>
           <BenefitsModalHeader>
             <Box textAlign="center" mb="8">
-              <LogoIcon boxSize="8" mb="4" /> <Text>Welcome to Muhasaba AI</Text>
+              <LogoIcon boxSize="8" mb="4" /> <Text>Welcome to NovaMexi</Text>
             </Box>
           </BenefitsModalHeader>
           <BenefitsModalBody fontSize="md" color="muted">

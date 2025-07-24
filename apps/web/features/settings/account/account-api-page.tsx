@@ -77,7 +77,7 @@ export function AccountApiPage() {
   return (
     <SettingsPage
       title="API access"
-      description="Access the Muhasaba AI API."
+      description="Access the NovaMexi API."
       toolbar={
         <Toolbar>
           <LinkButton href="#">API documentation</LinkButton>
