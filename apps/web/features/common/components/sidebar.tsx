@@ -9,8 +9,6 @@ import {
   Spacer,
   Stack,
   useBreakpointValue,
-  Icon,
-  Collapse,
 } from '@chakra-ui/react'
 import {
   Command,
@@ -37,23 +35,11 @@ import {
   LuHouse,
   LuPlus,
   LuSearch,
-  LuWallet,
-  LuChartArea,
-  LuReceipt,
-  LuUser,
-  LuBanknote,
-  LuFileText,
-  LuLayoutGrid,
-  LuTrendingUp,
-  LuClipboardList,
-  LuChartPie,
-  LuInbox,
   LuCompass,
   LuBell,
   LuVideo,
   LuImage,
 } from 'react-icons/lu'
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa' // Import arrow icons
 
 import { useActivePath } from '@acme/next'
 import { useHelpCenter } from '@acme/ui/help-center'
@@ -86,8 +72,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = (props) => {
     setUserSettings('sidebarWidth', width)
   }
 
-  const [isAccountingOpen, setIsAccountingOpen] = React.useState(false)
-  const [isReportsOpen, setIsReportsOpen] = React.useState(false)
+  const [, setIsAccountingOpen] = React.useState(false)
+  const [, setIsReportsOpen] = React.useState(false)
 
   // Track the active path to check if any subpage under Accounting is active
   const isAccountsActive = useActivePath('accounts', { end: false })
@@ -98,8 +84,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = (props) => {
   const isBalanceSheetActive = useActivePath('balance-sheet', { end: false })
   const isCashflowStatementActive = useActivePath('cashflow-statement', { end: false })
 
-  // Check if menu items should be disabled
-  const isDisabled = !isLoading && !hasBankConnection
+  // Menu items should be disabled when bank connection is loading or not available
+  const _isDisabled = !isLoading && !hasBankConnection
 
   // Set the parent item to be open if any subpage is active
   React.useEffect(() => {
