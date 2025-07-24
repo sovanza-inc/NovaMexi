@@ -9,7 +9,6 @@ import {
   MenuItem,
   MenuList,
   Portal,
-  useColorMode,
 } from '@chakra-ui/react'
 import { Has } from '@saas-ui-pro/feature-flags'
 import { useAuth } from '@saas-ui/auth-provider'
