@@ -11,7 +11,6 @@ import {
   Spinner,
 } from '@chakra-ui/react'
 import { useCurrentWorkspace } from '#features/common/hooks/use-current-workspace'
-import { QuestionnaireForm } from '#components/Questionnaire/QuestionnaireForm'
 
 interface QuestionnaireEditViewProps {
   onClose?: () => void
@@ -98,7 +97,14 @@ export default function QuestionnaireEditView({ onClose }: QuestionnaireEditView
   }
 
   if (isEditing) {
-    return <QuestionnaireForm onComplete={handleEditComplete} initialData={responses} />
+    return (
+      <Box p={8} textAlign="center">
+        <Text>Editing functionality is currently unavailable.</Text>
+        <Button mt={4} onClick={() => setIsEditing(false)}>
+          Back to View
+        </Button>
+      </Box>
+    )
   }
 
   const formatDate = (dateString: string) => {
