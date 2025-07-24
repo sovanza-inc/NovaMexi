@@ -150,12 +150,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = (props) => {
                 icon={<LuCompass />}
                 hotkey="navigation.explore"
               />
-              <AppSidebarLink
+              {/* <AppSidebarLink
                 href={usePath('/subscribe')}
                 label="Subscribe"
                 icon={<LuBell />}
                 hotkey="navigation.subscribe"
-              />
+              /> */}
               <AppSidebarLink
                 href={usePath('/videos')}
                 label="Videos"

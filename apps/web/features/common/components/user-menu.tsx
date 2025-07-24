@@ -91,14 +91,14 @@ export const UserMenu = () => {
             Help
           </MenuItem>
           <MenuItem>Feedback</MenuItem>
-          <MenuItem
+          {/* <MenuItem
             onClick={(e: React.MouseEvent) => {
               e.preventDefault()
               toggleColorMode()
             }}
           >
             {colorMode === 'dark' ? 'Light mode' : 'Dark mode'}
-          </MenuItem>
+          </MenuItem> */}
           <MenuDivider />
           <MenuItem
             command={logoutCommand}

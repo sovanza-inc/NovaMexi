@@ -26,9 +26,9 @@ export function LastUsedProvider(props: {
       hasArrow
       border="0"
       boxShadow="none"
-      bg="gray.100"
+      bgGradient="linear(270deg, #330D38 0%, #300A4D 50%, #140E21 75%, #140E21 100%)"
       _dark={{
-        bg: 'gray.800',
+        bgGradient: 'linear(270deg, #330D38 0%, #300A4D 50%, #140E21 75%, #140E21 100%)',
       }}
     >
       {props.children}

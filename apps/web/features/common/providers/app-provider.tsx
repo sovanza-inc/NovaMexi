@@ -16,6 +16,7 @@ import { ModalsProvider } from '@acme/ui/modals'
 import { appHotkeys } from '#config/hotkeys.config'
 
 import { Hotkeys } from '../components/hotkeys'
+import { AppBackground } from '../components/app-background'
 
 /**
  * We use a custom color mode manager to sync the color mode
@@ -71,7 +72,9 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
       >
         <FeaturesProvider value={segments}>
           <Hotkeys hotkeys={appHotkeys}>
-            <ModalsProvider>{children}</ModalsProvider>
+            <ModalsProvider>
+              <AppBackground>{children}</AppBackground>
+            </ModalsProvider>
           </Hotkeys>
         </FeaturesProvider>
       </SaasProvider>
