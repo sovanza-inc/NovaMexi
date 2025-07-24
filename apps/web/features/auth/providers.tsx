@@ -17,6 +17,16 @@ export function Providers() {
           leftIcon={<FaGithub />}
           height="9"
           variant="outline"
+          borderColor="white"
+          color="white"
+          _hover={{
+            backgroundColor: 'white',
+            color: 'black',
+          }}
+          _active={{
+            backgroundColor: 'white',
+            color: 'black',
+          }}
           onClick={() =>
             auth
               .logIn({

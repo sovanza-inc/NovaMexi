@@ -69,20 +69,9 @@ export const LoginPage = () => {
     <Stack 
       flex="1" 
       direction="row"
-      bgImage="url('/img/onboarding/DASH.png')"
-      bgSize="cover"
-      // bgPosition="center"
-      bgRepeat="round"
+      bgGradient="linear(270deg, #330D38 0%, #300A4D 50%, #140E21 75%, #140E21 100%)"
+      color="white"
       position="relative"
-      _before={{
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-        zIndex: 0,
-      }}
     >
       <Stack
         flex="1"
@@ -108,8 +97,8 @@ export const LoginPage = () => {
             onSubmit={onSubmit}
             sx={{
               'input:focus-visible, select:focus-visible': {
-                borderColor: '#1AB294 !important',
-                boxShadow: '0 0 0 1px #1AB294 !important',
+                borderColor: '#fff !important',
+                boxShadow: '0 0 0 1px #fff !important',
               }
             }}
           >
@@ -120,6 +109,8 @@ export const LoginPage = () => {
                   label="Email"
                   type="email"
                   autoComplete="email"
+                  color="white"
+                  borderColor="white"
                   ref={emailRef}
                   rightAddon={
                     <LastUsedProvider value="credentials">
@@ -133,13 +124,15 @@ export const LoginPage = () => {
                   type="password"
                   label="Password"
                   autoComplete="password"
+                  color="white"
+                  borderColor="white"
                 />
 
                 <Link href="/forgot-password">Forgot your password?</Link>
 
                 <SubmitButton 
-                  backgroundColor="#1AB294"
-                  _hover={{ backgroundColor: 'green.800' }}
+                  backgroundColor="#8C52FF"
+                  _hover={{ backgroundColor: '#8C52FF' }}
                   color="white"
                 >
                   Login
@@ -147,7 +140,7 @@ export const LoginPage = () => {
 
                 <HStack my="4">
                   <Divider />
-                  <Text flexShrink={0} color="muted">
+                  <Text flexShrink={0} color="white">
                     Or continue with
                   </Text>
                   <Divider />
@@ -159,9 +152,9 @@ export const LoginPage = () => {
           </Form>
         </Container>
 
-        <Text color="muted">
+        <Text color="white">
           Don&apos;t have an account yet?{' '}
-          <Link href="/signup" color="green.500">
+          <Link href="/signup" color="#8C52FF">
             Sign up
           </Link>
           .

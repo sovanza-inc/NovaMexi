@@ -48,6 +48,10 @@ import {
   LuClipboardList,
   LuChartPie,
   LuInbox,
+  LuCompass,
+  LuBell,
+  LuVideo,
+  LuImage,
 } from 'react-icons/lu'
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa' // Import arrow icons
 
@@ -157,25 +161,49 @@ export const AppSidebar: React.FC<AppSidebarProps> = (props) => {
                 hotkey="navigation.dashboard"
               />
               <AppSidebarLink
+                href={usePath('/explore')}
+                label="Explore"
+                icon={<LuCompass />}
+                hotkey="navigation.explore"
+              />
+              <AppSidebarLink
+                href={usePath('/subscribe')}
+                label="Subscribe"
+                icon={<LuBell />}
+                hotkey="navigation.subscribe"
+              />
+              <AppSidebarLink
+                href={usePath('/videos')}
+                label="Videos"
+                icon={<LuVideo />}
+                hotkey="navigation.videos"
+              />
+              <AppSidebarLink
+                href={usePath('/gallery')}
+                label="Gallery"
+                icon={<LuImage />}
+                hotkey="navigation.gallery"
+              />
+              {/* <AppSidebarLink
                 href={usePath('inbox')}
                 isActive={useActivePath('inbox', { end: false })}
                 label="Inbox"
                 badge={2}
                 icon={<LuInbox />}
                 hotkey="navigation.inbox"
-              />
+              /> */}
 
               {/* Bank Integrations Item */}
-              <AppSidebarLink
+              {/* <AppSidebarLink
                 href={usePath('bank-integrations')}
                 isActive={useActivePath('bank-integrations', { end: false })}
                 label="Bank Integrations"
                 icon={<LuWallet />}
                 hotkey="navigation.bankIntegrations"
-              />
+              /> */}
 
               {/* Parent Accounting Item */}
-              <NavItem
+              {/* <NavItem
                 icon={<LuBanknote />}
                 onClick={() => !isDisabled && setIsAccountingOpen(!isAccountingOpen)}
                 display="flex"
@@ -221,10 +249,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = (props) => {
                     Connect at least 1 bank to access these views
                   </Box>
                 )}
-              </NavItem>
+              </NavItem> */}
 
               {/* Accounting subitems */}
-              <Collapse in={isAccountingOpen}>
+              {/* <Collapse in={isAccountingOpen}>
                 <Stack pl={4}>
                   <AppSidebarLink
                     href={usePath('accounts')}
@@ -255,10 +283,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = (props) => {
                     hotkey="navigation.cashflow"
                   />
                 </Stack>
-              </Collapse>
+              </Collapse> */}
 
               {/* Parent Reports Item */}
-              <NavItem
+              {/* <NavItem
                 icon={<LuFileText />}
                 onClick={() => !isDisabled && setIsReportsOpen(!isReportsOpen)}
                 display="flex"
@@ -304,10 +332,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = (props) => {
                     Connect at least 1 bank to access these views
                   </Box>
                 )}
-              </NavItem>
+              </NavItem> */}
 
               {/* Reports subitems */}
-              <Collapse in={isReportsOpen}>
+              {/* <Collapse in={isReportsOpen}>
                 <Stack pl={4}>
                   <AppSidebarLink
                     href={usePath('profit-loss')}
@@ -331,7 +359,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = (props) => {
                     hotkey="navigation.cashflowStatement"
                   />
                 </Stack>
-              </Collapse>
+              </Collapse> */}
             </NavGroup>
 
             {!isCompact && <AppSidebarTags />}
