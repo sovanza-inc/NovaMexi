@@ -53,7 +53,7 @@ export const SignupPage = () => {
         justify="center"
         direction="column"
         spacing="8"
-        bgImage="url('/img/onboarding/DASH.png')"
+        // bgImage="url('/img/onboarding/DASH.png')"
         bgSize="cover"
         bgRepeat="round"
         position="relative"
@@ -82,8 +82,8 @@ export const SignupPage = () => {
             disabled={isPending || isSuccess}
             sx={{
               'input:focus-visible, select:focus-visible': {
-                borderColor: '#1AB294 !important',
-                boxShadow: '0 0 0 1px #1AB294 !important',
+                borderColor: '#fff !important',
+                boxShadow: '0 0 0 1px #fff !important',
               }
             }}
           >
@@ -95,6 +95,7 @@ export const SignupPage = () => {
                   autoComplete="email"
                   type="email"
                   placeholder="Enter your email"
+                  borderColor="#8C52FF"
                 />
 
                 <Field
@@ -103,6 +104,7 @@ export const SignupPage = () => {
                   type="password"
                   autoComplete="password"
                   placeholder="Create a password"
+                  borderColor="#8C52FF"
                 />
 
                 <Link
@@ -114,8 +116,8 @@ export const SignupPage = () => {
                   Forgot your password?
                 </Link>
 
-                <SubmitButton backgroundColor="#1AB294"
-                  _hover={{ backgroundColor: 'green.800' }}
+                <SubmitButton backgroundColor="#8C52FF"
+                  _hover={{ backgroundColor: '#8C52FF' }}
                   color="white" loadingText="Creating account...">
                   Sign up
                 </SubmitButton>
@@ -126,13 +128,14 @@ export const SignupPage = () => {
 
         <Text color="muted" position="relative" zIndex={1}>
           Already have an account?{' '}
-          <Link href="/login" color="green.500">
+          <Link href="/login" color="#8C52FF">
             Login
           </Link>
           .
         </Text>
       </Stack>
-      <Stack flex="1" bg="green.600" display={{ base: 'none', sm: 'none', md: 'flex' }}>
+      <Stack flex="1" bgGradient="linear(270deg, #330D38 0%, #300A4D 50%, #140E21 75%, #140E21 100%)"
+        display={{ base: 'none', sm: 'none', md: 'flex' }}>
         <Center flex="1">
           <Testimonial />
         </Center>
