@@ -9,6 +9,7 @@ import {
   MenuItem,
   MenuList,
   Portal,
+  useColorMode,
 } from '@chakra-ui/react'
 import { Has } from '@saas-ui-pro/feature-flags'
 import { useAuth } from '@saas-ui/auth-provider'
@@ -39,6 +40,8 @@ export const UserMenu = () => {
       router.push('/login')
     })
   }
+
+  const { toggleColorMode, colorMode } = useColorMode()
 
   const help = useHelpCenter()
   const helpCommand = useHotkeysShortcut('general.help', () => {
