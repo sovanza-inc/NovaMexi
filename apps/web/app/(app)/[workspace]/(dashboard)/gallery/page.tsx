@@ -23,7 +23,7 @@ import { useVideoStorage } from '#features/common/hooks/use-video-storage'
 import { LuVideo, LuTrash2, LuDownload, LuPlay, LuCalendar } from 'react-icons/lu'
 
 export default function GalleryPage() {
-  const { videos, deleteVideo, clearAllVideos, refreshVideos, saveVideo } = useVideoStorage()
+  const { videos, deleteVideo, clearAllVideos, refreshVideos } = useVideoStorage()
   const toast = useToast()
   const cardBg = useColorModeValue('white', 'gray.800')
   
