@@ -16,6 +16,10 @@ import {
   FormControl,
   FormLabel,
   Switch,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
   useToast,
   HStack,
   Badge,
@@ -43,7 +47,7 @@ export default function ExplorePage() {
   const [audio, setAudio] = useState(true)
   const [negativePrompt, setNegativePrompt] = useState('')
   const [enhancePrompt, setEnhancePrompt] = useState(true)
-
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null)
   const [generatedVideo, setGeneratedVideo] = useState<{
     videoUrl: string
     duration: number
@@ -88,7 +92,7 @@ export default function ExplorePage() {
         return
       }
 
-
+      setCurrentTaskId(generateResponse.taskId)
 
       toast({
         title: 'Video Generation Started',
@@ -103,6 +107,7 @@ export default function ExplorePage() {
       
       if (result && result.result) {
         setGeneratedVideo(result.result)
+        setCurrentTaskId(null)
         
         // Save video to storage for gallery
         console.log('Saving video to storage:', {
@@ -157,7 +162,7 @@ export default function ExplorePage() {
           isClosable: true,
         })
 
-        // Use a proxy approach to avoid CORS
+        // Use our API route to avoid CORS issues
         const response = await fetch('/api/download-video', {
           method: 'POST',
           headers: {

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { videoUrl, filename } = await request.json()
+    const body = await request.json()
+    const { videoUrl, filename } = body
 
     if (!videoUrl) {
       return NextResponse.json({ error: 'Video URL is required' }, { status: 400 })
@@ -15,18 +16,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch video' }, { status: 500 })
     }
 
-    // Get the video as a blob
-    const videoBlob = await response.blob()
+    const videoBuffer = await response.arrayBuffer()
 
-    // Return the video as a blob response
-    return new NextResponse(videoBlob, {
+    // Return the video as a downloadable file
+    return new NextResponse(videoBuffer, {
       headers: {
         'Content-Type': 'video/mp4',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `attachment; filename="${filename || 'video.mp4'}"`,
+        'Access-Control-Allow-Origin': '*',
       },
     })
   } catch (error) {
-    console.error('Download video error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Download error:', error)
+    return NextResponse.json({ error: 'Download failed' }, { status: 500 })
   }
 }

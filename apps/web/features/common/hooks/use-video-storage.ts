@@ -36,7 +36,13 @@ export function useVideoStorage() {
   useEffect(() => {
     try {
       console.log('Saving videos to localStorage:', videos)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(videos))
+      if (videos.length > 0) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(videos))
+        console.log('Successfully saved videos to localStorage')
+      } else {
+        console.log('No videos to save, clearing localStorage')
+        localStorage.removeItem(STORAGE_KEY)
+      }
     } catch (error) {
       console.error('Error saving videos to storage:', error)
     }
