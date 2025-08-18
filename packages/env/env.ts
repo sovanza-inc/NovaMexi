@@ -22,5 +22,8 @@ export const env = createEnv(
     EMAIL_FROM: z.string(),
 
     AUTH_SECRET: z.string(),
+
+    // VEO3 API
+    VEO3_API_KEY: z.string().optional(),
   }),
 )
