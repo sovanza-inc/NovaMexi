@@ -73,7 +73,6 @@ export default function ExplorePage() {
     approveAllScenes,
     clearStory,
     clearError: clearStoryError,
-    getScenePrompt,
     canGenerateVideo,
   } = useStoryGenerator()
 
@@ -223,7 +222,7 @@ export default function ExplorePage() {
       })
 
       // Generate videos for each approved scene
-      const videoPromises = approvedScenes.map(async (scene, index) => {
+      const videoPromises = approvedScenes.map(async (scene) => {
         try {
           const generateResponse = await generateVideo(scene.prompt, {
             model,
