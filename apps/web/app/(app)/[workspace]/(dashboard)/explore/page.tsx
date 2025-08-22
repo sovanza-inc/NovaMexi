@@ -63,6 +63,8 @@ export default function ExplorePage() {
     frameCount?: number
   } | null>(null)
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [progressText, setProgressText] = useState('')
 
   const toast = useToast()
   const {
@@ -96,7 +98,7 @@ export default function ExplorePage() {
     updateSceneVideoUrl,
   } = useStoryGenerator()
 
-    const handleGenerateStory = async () => {
+  const handleGenerateStory = async () => {
     if (!storyTitle.trim()) {
       toast({
         title: 'Error',
@@ -284,7 +286,7 @@ export default function ExplorePage() {
           }
 
           console.log(`Scene ${scene.sceneNumber} - Starting to poll for taskId:`, generateResponse.taskId)
-          
+
           // Poll for completion
           const result = await pollStatus(generateResponse.taskId)
           
@@ -431,7 +433,17 @@ export default function ExplorePage() {
     try {
       // This would call an API to combine all frame videos
       // For now, we'll simulate the process
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      setProgress(25)
+      setProgressText('Analyzing video frames...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      setProgress(50)
+      setProgressText('Combining video segments...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      setProgress(75)
+      setProgressText('Finalizing combined video...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Create a combined video object using the first scene's video as a preview
       // In a real implementation, this would be an API call to combine all videos
@@ -485,6 +497,7 @@ export default function ExplorePage() {
         window.dispatchEvent(new CustomEvent('videoSaved', { detail: savedVideo }))
       }, 100)
 
+      setProgress(100)
       setGeneratedVideo(combinedVideo)
       setProgressText('Combined video created successfully!')
       
@@ -648,13 +661,13 @@ export default function ExplorePage() {
                   Ideas to Visual
                 </Text>
               </Heading>
-                              <Text 
-                  fontSize={{ base: "md", md: "lg" }} 
-                  color="gray.500"
-                  px={{ base: 2, md: 0 }}
-                >
+              <Text 
+                fontSize={{ base: "md", md: "lg" }} 
+                color="gray.500"
+                px={{ base: 2, md: 0 }}
+              >
                   Generate stories with custom duration and create videos from your ideas
-                </Text>
+              </Text>
             </Box>
 
             {/* Story Generation Card */}
@@ -891,7 +904,7 @@ export default function ExplorePage() {
                       </Button>
                     </HStack>
                     
-                                        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
                       {story.scenes && story.scenes.length > 0 ? (
                         <>
                           {/* <Box p={2} bg="red.50" borderRadius="md" border="1px" borderColor="red.200" mb={2}>
@@ -908,14 +921,14 @@ export default function ExplorePage() {
                           </Box>
                           {story.scenes.map((scene, index) => {
                             console.log(`Rendering scene ${index + 1}/${story.scenes.length}:`, scene)
-                            return (
-                              <Card
-                                key={scene.sceneNumber}
-                                p={3}
-                                bg={scene.isApproved ? "green.50" : "purple.50"}
-                                border="1px solid"
-                                borderColor={scene.isApproved ? "green.400" : "purple.200"}
-                                position="relative"
+                        return (
+                          <Card
+                            key={scene.sceneNumber}
+                            p={3}
+                            bg={scene.isApproved ? "green.50" : "purple.50"}
+                            border="1px solid"
+                            borderColor={scene.isApproved ? "green.400" : "purple.200"}
+                            position="relative"
                                 borderWidth="3px"
                                 _before={{
                                   content: `"Frame ${scene.sceneNumber}"`,
@@ -930,52 +943,52 @@ export default function ExplorePage() {
                                   fontSize: "xs",
                                   fontWeight: "bold"
                                 }}
-                              >
-                              {/* Scene Status Badge */}
-                              <HStack position="absolute" top={2} right={2} spacing={1}>
-                                {scene.isApproved && (
-                                  <Badge colorScheme="green" variant="solid" size="sm">
-                                    ✓ Approved
-                                  </Badge>
-                                )}
-                              </HStack>
+                          >
+                            {/* Scene Status Badge */}
+                            <HStack position="absolute" top={2} right={2} spacing={1}>
+                              {scene.isApproved && (
+                                <Badge colorScheme="green" variant="solid" size="sm">
+                                  ✓ Approved
+                                </Badge>
+                              )}
+                            </HStack>
 
                               <VStack align="end" spacing={3}>
                                 <HStack align="end" justify="flex-end" w="full">
-                                  <Badge colorScheme="blue" variant="subtle">
-                                    {scene.duration}s
-                                  </Badge>
-                                </HStack>
-                                
-                                <Text fontSize="sm" fontWeight="medium">
-                                  {scene.description}
-                                </Text>
-                                
-                                <Text fontSize="xs" color="gray.600" noOfLines={2}>
-                                  {scene.prompt}
-                                </Text>
+                                <Badge colorScheme="blue" variant="subtle">
+                                  {scene.duration}s
+                                </Badge>
+                              </HStack>
+                              
+                              <Text fontSize="sm" fontWeight="medium">
+                                {scene.description}
+                              </Text>
+                              
+                              <Text fontSize="xs" color="gray.600" noOfLines={2}>
+                                {scene.prompt}
+                              </Text>
 
-                                {/* Scene Action Buttons */}
-                                <HStack spacing={2} w="full" justify="flex-end">
-                                  <HStack spacing={1}>
-                                    {!scene.isApproved && (
-                                      <Button
-                                        size="xs"
-                                        colorScheme="green"
-                                        variant="outline"
-                                        onClick={() => handleApproveScene(scene.sceneNumber)}
-                                      >
-                                        Approve
-                                      </Button>
-                                    )}
+                              {/* Scene Action Buttons */}
+                              <HStack spacing={2} w="full" justify="flex-end">
+                                <HStack spacing={1}>
+                                  {!scene.isApproved && (
                                     <Button
                                       size="xs"
-                                      colorScheme="blue"
-                                      variant="ghost"
-                                      onClick={() => handleRegenerateScene(scene.sceneNumber)}
+                                      colorScheme="green"
+                                      variant="outline"
+                                      onClick={() => handleApproveScene(scene.sceneNumber)}
                                     >
-                                      Regenerate
+                                      Approve
                                     </Button>
+                                  )}
+                                  <Button
+                                    size="xs"
+                                    colorScheme="blue"
+                                    variant="ghost"
+                                    onClick={() => handleRegenerateScene(scene.sceneNumber)}
+                                  >
+                                    Regenerate
+                                  </Button>
                                     {scene.isApproved && (
                                       <Button
                                         size="xs"
@@ -986,12 +999,12 @@ export default function ExplorePage() {
                                         Regenerate Video
                                       </Button>
                                     )}
-                                  </HStack>
                                 </HStack>
-                              </VStack>
-                            </Card>
-                          )
-                        })}
+                              </HStack>
+                            </VStack>
+                          </Card>
+                        )
+                      })}
                         </>
                       ) : (
                         <Box p={4} textAlign="center" color="gray.500">
@@ -1100,23 +1113,23 @@ export default function ExplorePage() {
                     direction={{ base: 'column', md: 'row' }}
                     justify={{ base: "center", md: "flex-end" }}
                   >
-                    <Button
-                      colorScheme="purple"
+                  <Button
+                    colorScheme="purple"
                       size={{ base: "lg", md: "lg" }}
-                      isLoading={isGenerating || isPolling}
-                      loadingText={isGenerating ? "Generating Story Videos..." : "Processing..."}
-                      onClick={handleGenerate}
-                      px={{ base: 6, md: 8 }}
-                      leftIcon={<Icon as={LuVideo} />}
-                      isDisabled={!story || !canGenerateVideo()}
+                    isLoading={isGenerating || isPolling}
+                    loadingText={isGenerating ? "Generating Story Videos..." : "Processing..."}
+                    onClick={handleGenerate}
+                    px={{ base: 6, md: 8 }}
+                    leftIcon={<Icon as={LuVideo} />}
+                    isDisabled={!story || !canGenerateVideo()}
                       _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
                       _active={{ transform: 'translateY(0)' }}
                       transition="all 0.2s"
                       cursor="pointer"
                       w={{ base: "full", md: "auto" }}
-                    >
-                      Generate Story Videos
-                    </Button>
+                  >
+                    Generate Story Videos
+                  </Button>
                     
                     <Button
                       colorScheme="green"
@@ -1149,6 +1162,21 @@ export default function ExplorePage() {
                     />
                     <Text mt={2} fontSize="sm" color="gray.500" textAlign="center">
                       {isGenerating ? "Starting story video generation..." : "Processing your story videos..."}
+                    </Text>
+                  </Box>
+                )}
+
+                {/* Combined Video Progress Indicator */}
+                {isGeneratingVideo && (
+                  <Box>
+                    <Progress
+                      size="sm"
+                      value={progress}
+                      colorScheme="green"
+                      borderRadius="md"
+                    />
+                    <Text mt={2} fontSize="sm" color="gray.500" textAlign="center">
+                      {progressText}
                     </Text>
                   </Box>
                 )}
@@ -1325,9 +1353,9 @@ export default function ExplorePage() {
                       <Badge colorScheme="blue" variant="subtle">
                         {story.totalDuration}s
                       </Badge>
-                      <Badge colorScheme="purple" variant="subtle">
+                        <Badge colorScheme="purple" variant="subtle">
                         Combined
-                      </Badge>
+                        </Badge>
                     </HStack>
                   </Box>
 
@@ -1375,9 +1403,9 @@ export default function ExplorePage() {
                             </Box>
                           )}
                           
-                          <video
-                            src={generatedVideo.videoUrl}
-                            controls
+                    <video
+                      src={generatedVideo.videoUrl}
+                      controls
                             style={{ 
                               width: '100%', 
                               height: '100%', 
@@ -1403,28 +1431,28 @@ export default function ExplorePage() {
                               <Text fontSize="xs" color="gray.300">
                                 Total duration: {generatedVideo.duration}s
                               </Text>
-                            </Box>
+                  </Box>
                           )}
-                          
+
                           <HStack spacing={3} justify="center" mt={2}>
-                            <Button
+                    <Button
                               size="sm"
-                              colorScheme="purple"
-                              variant="outline"
+                      colorScheme="purple"
+                      variant="outline"
                               onClick={handlePlay}
                               leftIcon={<Icon as={LuPlay} />}
-                            >
-                              Open in New Tab
-                            </Button>
-                            <Button
+                    >
+                      Open in New Tab
+                    </Button>
+                    <Button
                               size="sm"
                               colorScheme="green"
-                              onClick={handleDownload}
+                      onClick={handleDownload}
                               leftIcon={<Icon as={LuDownload} />}
-                            >
+                    >
                               Download
-                            </Button>
-                          </HStack>
+                    </Button>
+                  </HStack>
                         </VStack>
                       ) : (
                         // Show success message if no real video URL
