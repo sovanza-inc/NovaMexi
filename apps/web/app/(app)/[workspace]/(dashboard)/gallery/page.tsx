@@ -124,7 +124,7 @@ export default function GalleryPage() {
     })
   }
 
-    return (
+  return (
     <Page>
       <PageHeader
         title="Gallery"
@@ -134,10 +134,10 @@ export default function GalleryPage() {
           <VStack spacing={{ base: 4, md: 6 }} align="stretch">
             {/* Header with Clear All button */}
             <HStack justify="space-between" align="center">
-              <Text 
-                fontSize={{ base: "xl", md: "2xl" }} 
+            <Text 
+              fontSize={{ base: "xl", md: "2xl" }} 
                 fontWeight="bold"
-                mb={{ base: 1, md: 2 }}
+              mb={{ base: 1, md: 2 }}
               >
                 Your Generated Videos
               </Text>
@@ -237,30 +237,30 @@ export default function GalleryPage() {
                 }
               />
             ) : (
-              <Wrap 
-                spacing={{ base: 3, sm: 4, md: 6 }}
-                justify={{ base: 'center', sm: 'flex-start' }}
-                mx={{ base: -2, sm: 0 }}
-              >
+            <Wrap 
+              spacing={{ base: 3, sm: 4, md: 6 }}
+              justify={{ base: 'center', sm: 'flex-start' }}
+              mx={{ base: -2, sm: 0 }}
+            >
                 {videos.map((video) => (
                   <WrapItem key={video.id}>
-                    <Box
+                  <Box
                       bg={cardBg}
-                      borderRadius="xl"
-                      overflow="hidden"
-                      position="relative"
-                      width={{ 
+                    borderRadius="xl"
+                    overflow="hidden"
+                    position="relative"
+                    width={{ 
                         base: "280px", 
                         sm: "320px", 
                         md: "360px" 
                       }}
                       boxShadow="lg"
-                      transition="all 0.2s"
-                      _hover={{
+                    transition="all 0.2s"
+                    _hover={{
                         transform: 'translateY(-2px)',
-                        shadow: 'xl',
-                      }}
-                    >
+                      shadow: 'xl',
+                    }}
+                  >
                       {/* Video Player */}
                       <Box
                         bg="black"
@@ -347,10 +347,10 @@ export default function GalleryPage() {
                           </HStack>
                         </VStack>
                       </Box>
-                    </Box>
-                  </WrapItem>
-                ))}
-              </Wrap>
+                  </Box>
+                </WrapItem>
+              ))}
+            </Wrap>
             )}
           </VStack>
         </Container>
