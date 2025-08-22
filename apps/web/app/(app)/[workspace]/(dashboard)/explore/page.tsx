@@ -63,8 +63,6 @@ export default function ExplorePage() {
     frameCount?: number
   } | null>(null)
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [progressText, setProgressText] = useState('')
 
   const toast = useToast()
   const {
@@ -1451,7 +1449,7 @@ export default function ExplorePage() {
                       <VStack spacing={3} color="white" textAlign="center">
                         <Icon as={LuVideo} boxSize={12} />
                         <Text fontSize="lg" textAlign="center">
-                          🎬 All frames ready! Click "Create Combined Video" above
+                          🎬 All frames ready! Click &ldquo;Create Combined Video&rdquo; above
                         </Text>
                         <Text fontSize="sm" color="gray.300">
                           Your combined video will appear here after generation
@@ -1472,7 +1470,7 @@ export default function ExplorePage() {
                   </Box>
 
                   <Text fontSize="sm" color="gray.500" textAlign="center">
-                    💡 Use the "Create Combined Video" button above to combine all approved video frames
+                    💡 Use the &ldquo;Create Combined Video&rdquo; button above to combine all approved video frames
                   </Text>
                 </VStack>
               </Card>
