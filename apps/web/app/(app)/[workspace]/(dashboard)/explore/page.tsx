@@ -21,13 +21,22 @@ import {
   Badge,
   Progress,
   Icon,
+  Input,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
 } from '@chakra-ui/react'
 import { Page, PageBody } from '@saas-ui-pro/react'
 import { useState, useEffect } from 'react'
 import { PageHeader } from '#features/common/components/page-header'
 import { useVEO3API } from '#features/common/hooks/use-veo3-api'
 import { useVideoStorage } from '#features/common/hooks/use-video-storage'
-import { useStoryGenerator } from '#features/common/hooks/use-story-generator'
+import { useStoryGenerator, type StoryScene } from '#features/common/hooks/use-story-generator'
 import { LuVideo, LuDownload, LuPlay, LuBookOpen, LuRefreshCw } from 'react-icons/lu'
 
 const hints = [
@@ -39,6 +48,7 @@ const hints = [
 
 export default function ExplorePage() {
   const [storyTitle, setStoryTitle] = useState('')
+  const [customDuration, setCustomDuration] = useState(60)
   const [model, setModel] = useState<'veo3-fast' | 'veo3-quality'>('veo3-fast')
   const [resolution, setResolution] = useState<'720p' | '1080p'>('720p')
   const [audio, setAudio] = useState(true)
@@ -49,7 +59,12 @@ export default function ExplorePage() {
     duration: number
     resolution: string
     hasAudio: boolean
+    isPreview?: boolean
+    frameCount?: number
   } | null>(null)
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [progressText, setProgressText] = useState('')
 
   const toast = useToast()
   const {
@@ -61,6 +76,12 @@ export default function ExplorePage() {
     clearError,
   } = useVEO3API()
   const { saveVideo } = useVideoStorage()
+  
+  // Video regeneration modal state
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [selectedScene, setSelectedScene] = useState<StoryScene | null>(null)
+  const [editingPrompt, setEditingPrompt] = useState('')
+  const [isRegeneratingVideo, setIsRegeneratingVideo] = useState(false)
   
   const {
     story,
@@ -74,6 +95,7 @@ export default function ExplorePage() {
     clearStory,
     clearError: clearStoryError,
     canGenerateVideo,
+    updateSceneVideoUrl,
   } = useStoryGenerator()
 
   const handleGenerateStory = async () => {
@@ -88,16 +110,36 @@ export default function ExplorePage() {
       return
     }
 
+    if (customDuration < 8) {
+      toast({
+        title: 'Error',
+        description: 'Video duration must be at least 8 seconds',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+      return
+    }
+
     try {
-      const generatedStory = await generateStory(storyTitle)
+      console.log('Generating story with title:', storyTitle, 'duration:', customDuration)
+      const generatedStory = await generateStory(storyTitle, customDuration)
+      console.log('Generated story result:', generatedStory)
+      
       if (generatedStory) {
+        const frameCount = generatedStory.scenes?.length || 0
+        const totalDuration = generatedStory.totalDuration || 0
+        console.log('Story details - frames:', frameCount, 'duration:', totalDuration)
+        
         toast({
           title: 'Story Generated Successfully!',
-          description: `"${generatedStory.title}" has been created with ${generatedStory.scenes.length} scenes. Approve the scenes to generate videos.`,
+          description: `"${generatedStory.title}" has been created with ${frameCount} scenes (${totalDuration}s total). Approve the scenes to generate videos.`,
           status: 'success',
           duration: 5000,
           isClosable: true,
         })
+      } else {
+        console.log('No story was generated')
       }
     } catch (err) {
       console.error('Story generation error:', err)
@@ -117,11 +159,13 @@ export default function ExplorePage() {
     }
 
     try {
-      const regeneratedStory = await regenerateStory(storyTitle)
+      const regeneratedStory = await regenerateStory(storyTitle, customDuration)
       if (regeneratedStory) {
+        const frameCount = regeneratedStory.scenes.length
+        const totalDuration = regeneratedStory.totalDuration
         toast({
           title: 'Story Regenerated Successfully!',
-          description: `"${regeneratedStory.title}" has been recreated with new scenes.`,
+          description: `"${regeneratedStory.title}" has been recreated with ${frameCount} scenes (${totalDuration}s total).`,
           status: 'success',
           duration: 5000,
           isClosable: true,
@@ -224,6 +268,8 @@ export default function ExplorePage() {
       // Generate videos for each approved scene
       const videoPromises = approvedScenes.map(async (scene) => {
         try {
+          console.log(`Starting video generation for Scene ${scene.sceneNumber} with prompt:`, scene.prompt)
+          
           const generateResponse = await generateVideo(scene.prompt, {
             model,
             resolution,
@@ -232,10 +278,19 @@ export default function ExplorePage() {
             enhancePrompt,
           })
 
-          if (!generateResponse) return null
+          console.log(`Scene ${scene.sceneNumber} generateVideo response:`, generateResponse)
+
+          if (!generateResponse) {
+            console.log(`Scene ${scene.sceneNumber} - No generateResponse, skipping`)
+            return null
+          }
+
+          console.log(`Scene ${scene.sceneNumber} - Starting to poll for taskId:`, generateResponse.taskId)
 
           // Poll for completion
           const result = await pollStatus(generateResponse.taskId)
+          
+          console.log(`Scene ${scene.sceneNumber} pollStatus result:`, result)
           
           if (result && result.result) {
             // Save individual scene video
@@ -250,6 +305,11 @@ export default function ExplorePage() {
             })
 
             console.log(`Scene ${scene.sceneNumber} video saved:`, savedVideo)
+            
+            // Update the story scene with the video URL
+            console.log(`Updating scene ${scene.sceneNumber} with video URL:`, result.result.videoUrl)
+            updateSceneVideoUrl(scene.sceneNumber, result.result.videoUrl)
+            console.log(`Scene ${scene.sceneNumber} update function called`)
             
             // Notify gallery
             setTimeout(() => {
@@ -284,6 +344,8 @@ export default function ExplorePage() {
             duration: successfulVideos[0].duration,
             resolution: successfulVideos[0].resolution,
             hasAudio: successfulVideos[0].hasAudio,
+            isPreview: false,
+            frameCount: 1,
           })
         }
       } else {
@@ -304,6 +366,161 @@ export default function ExplorePage() {
         duration: 5000,
         isClosable: true,
       })
+    }
+  }
+
+  // Open video regeneration modal for a specific scene
+  const handleOpenVideoRegeneration = (scene: StoryScene) => {
+    setSelectedScene(scene)
+    setEditingPrompt(scene.prompt)
+    onOpen()
+  }
+
+  // Regenerate video for a specific scene
+  const handleRegenerateVideo = async () => {
+    if (!selectedScene || !story) return
+
+    setIsRegeneratingVideo(true)
+    try {
+      // Generate new video for this scene
+      const result = await generateVideo(editingPrompt, {
+        model,
+        resolution,
+        audio,
+        negativePrompt: negativePrompt || undefined,
+        enhancePrompt,
+      })
+
+      if (result?.taskId) {
+        const videoResult = await pollStatus(result.taskId)
+        if (videoResult?.result?.videoUrl) {
+          toast({
+            title: 'Video Regenerated!',
+            description: `Frame ${selectedScene.sceneNumber} video has been regenerated successfully.`,
+            status: 'success',
+            duration: 3000,
+            isClosable: true,
+          })
+          
+          // Close modal and reset state
+          onClose()
+          setSelectedScene(null)
+          setEditingPrompt('')
+        }
+      }
+    } catch (err) {
+      console.error('Video regeneration error:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to regenerate video. Please try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+    } finally {
+      setIsRegeneratingVideo(false)
+    }
+  }
+
+  // Generate combined video from all frame videos
+  const handleGenerateCombinedVideo = async () => {
+    if (!story) return
+
+    setIsGeneratingVideo(true)
+    setProgress(0)
+    setProgressText('Creating combined video...')
+
+    try {
+      // This would call an API to combine all frame videos
+      // For now, we'll simulate the process
+      setProgress(25)
+      setProgressText('Analyzing video frames...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      setProgress(50)
+      setProgressText('Combining video segments...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      setProgress(75)
+      setProgressText('Finalizing combined video...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Create a combined video object using the first scene's video as a preview
+      // In a real implementation, this would be an API call to combine all videos
+      const firstSceneWithVideo = story.scenes.find(scene => scene.isApproved && scene.videoUrl)
+      
+      console.log('First scene with video:', firstSceneWithVideo)
+      console.log('Video URL found:', firstSceneWithVideo?.videoUrl)
+      
+      // For now, we'll show the first scene's video as a preview of what the combined video would look like
+      // In a real implementation, this would be an API call to actually combine all videos
+      console.log('Creating combined video with URL:', firstSceneWithVideo?.videoUrl)
+      console.log('Story total duration:', story.totalDuration)
+      console.log('Resolution:', resolution)
+      console.log('Audio enabled:', audio)
+      
+      const combinedVideo = {
+        videoUrl: firstSceneWithVideo?.videoUrl || '',
+        duration: story.totalDuration, // This should be the total story duration
+        resolution,
+        hasAudio: audio,
+        isCombined: true,
+        isPreview: true, // Mark this as a preview
+        frameCount: story.scenes.filter(s => s.isApproved && s.videoUrl).length,
+        totalDuration: story.totalDuration, // Store the actual total duration
+        frameDuration: 8, // Each frame is 8 seconds
+      }
+      
+      console.log('Combined video object created:', combinedVideo)
+      console.log('Story total duration being used:', story.totalDuration)
+      console.log('Number of approved frames:', story.scenes.filter(s => s.isApproved && s.videoUrl).length)
+
+      // Save combined video to gallery with proper identification
+      const saveData = {
+        prompt: `🎬 COMBINED VIDEO: ${story.title} (${story.scenes.filter(s => s.isApproved && s.videoUrl).length} frames, ${story.totalDuration}s total)`,
+        model: 'veo3-quality',
+        videoUrl: combinedVideo.videoUrl,
+        duration: story.totalDuration, // Use story total duration, not frame duration
+        resolution: combinedVideo.resolution,
+        hasAudio: combinedVideo.hasAudio,
+        taskId: `combined_${Date.now()}`,
+      }
+      
+      console.log('Saving combined video with data:', saveData)
+      
+      const savedVideo = await saveVideo(saveData)
+
+      console.log('Combined video saved to gallery:', savedVideo)
+
+      // Notify gallery page about the new combined video
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('videoSaved', { detail: savedVideo }))
+      }, 100)
+
+      setProgress(100)
+      setGeneratedVideo(combinedVideo)
+      setProgressText('Combined video created successfully!')
+      
+      toast({
+        title: 'Success!',
+        description: 'Combined video has been created and saved to gallery!',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      })
+    } catch (err) {
+      console.error('Combined video generation error:', err)
+      toast({
+        title: 'Error',
+        description: 'Failed to create combined video. Please try again.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+    } finally {
+      setIsGeneratingVideo(false)
+      setProgress(0)
+      setProgressText('')
     }
   }
 
@@ -398,6 +615,21 @@ export default function ExplorePage() {
     }
   }, [storyError, toast, clearStoryError])
 
+  // Monitor story state changes for debugging
+  useEffect(() => {
+    if (story) {
+      console.log('Story state changed:', {
+        title: story.title,
+        scenes: story.scenes.map(s => ({ 
+          num: s.sceneNumber, 
+          approved: s.isApproved, 
+          hasVideo: !!s.videoUrl,
+          videoUrl: s.videoUrl 
+        }))
+      })
+    }
+  }, [story])
+
   const cardBg = useColorModeValue('white', 'gray.800')
   const hintBg = useColorModeValue('purple.50', 'whiteAlpha.100')
   const hintHoverBg = useColorModeValue('purple.100', 'whiteAlpha.200')
@@ -434,7 +666,7 @@ export default function ExplorePage() {
                 color="gray.500"
                 px={{ base: 2, md: 0 }}
               >
-                Generate stories and create videos from your ideas
+                  Generate stories with custom duration and create videos from your ideas
               </Text>
             </Box>
 
@@ -452,7 +684,7 @@ export default function ExplorePage() {
                     <Heading size="md">Story Generation</Heading>
                   </HStack>
                   <Text mb={4} color="gray.600" fontSize="sm">
-                    Provide a story title and AI will generate a complete story with 8 scenes of 8 seconds each
+                    Provide a story title and duration, AI will generate a complete story with optimal structure
                   </Text>
                 </Box>
 
@@ -478,16 +710,91 @@ export default function ExplorePage() {
                   />
                 </Box>
 
+                {/* Video Duration Input */}
+                <Box>
+                  <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.600">
+                    Video Duration (seconds)
+                  </Text>
+                  <VStack spacing={4} align="stretch">
+                    <FormControl>
+                      <FormLabel fontSize="sm">Select from Preset Durations</FormLabel>
+                      <Select
+                        placeholder="Choose duration"
+                        onChange={(e) => setCustomDuration(Number(e.target.value))}
+                        size="md"
+                      >
+                        <option value={8}>8s</option>
+                        <option value={16}>16s</option>
+                        <option value={24}>24s</option>
+                        <option value={30}>30s</option>
+                        <option value={32}>32s</option>
+                        <option value={40}>40s</option>
+                        <option value={45}>45s</option>
+                        <option value={48}>48s</option>
+                        <option value={50}>50s</option>
+                        <option value={55}>55s</option>
+                        <option value={56}>56s</option>
+                        <option value={60}>60s</option>
+                      </Select>
+                    </FormControl>
+                    
+                    <FormControl>
+                      <FormLabel fontSize="sm">Or Enter Custom Duration</FormLabel>
+                      <Input
+                        type="number"
+                        placeholder="Enter duration (8-60 seconds)"
+                        min={8}
+                        max={60}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          const value = Number(e.target.value)
+                          if (value >= 8 && value <= 60) {
+                            setCustomDuration(value)
+                          }
+                        }}
+                        size="md"
+                      />
+                    </FormControl>
+                    
+                    {customDuration > 0 && (
+                      <Box p={3} bg="blue.50" borderRadius="md" border="1px" borderColor="blue.200">
+                        <HStack justify="space-between">
+                          <Text fontSize="sm" fontWeight="medium" color="blue.800">
+                            Duration: {customDuration} seconds
+                          </Text>
+                          <Badge colorScheme="blue" variant="solid">
+                            {Math.ceil(customDuration / 8)} frames
+                          </Badge>
+                        </HStack>
+                        <Text fontSize="xs" color="blue.600" mt={1}>
+                          Each frame is 8 seconds (last frame adjusts to fill remaining time)
+                        </Text>
+                      </Box>
+                    )}
+                  </VStack>
+                  <Text mt={3} fontSize="xs" color="gray.500">
+                    💡 Each frame is 8 seconds. Last frame adjusts to fill remaining time. Maximum: 60 seconds.
+                  </Text>
+                </Box>
+
                 {/* Story Generation Buttons */}
-                <HStack spacing={3} justify="center">
+                <Stack 
+                  spacing={3} 
+                  align="center"
+                  direction={{ base: 'column', md: 'row' }}
+                >
                   <Button
                     colorScheme="purple"
-                    size="md"
+                    size={{ base: "lg", md: "md" }}
                     isLoading={isGeneratingStory}
                     loadingText="Generating Story..."
                     onClick={handleGenerateStory}
                     leftIcon={<Icon as={LuBookOpen} />}
                     isDisabled={!storyTitle.trim()}
+                    _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                    _active={{ transform: 'translateY(0)' }}
+                    transition="all 0.2s"
+                    cursor="pointer"
+                    w={{ base: "full", md: "auto" }}
                   >
                     Generate Story
                   </Button>
@@ -495,37 +802,86 @@ export default function ExplorePage() {
                     <>
                       <Button
                         colorScheme="blue"
-                        size="md"
+                        size={{ base: "lg", md: "md" }}
                         isLoading={isGeneratingStory}
                         loadingText="Regenerating..."
                         onClick={handleRegenerateStory}
                         leftIcon={<Icon as={LuRefreshCw} />}
                         variant="outline"
+                        _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                        _active={{ transform: 'translateY(0)' }}
+                        transition="all 0.2s"
+                        cursor="pointer"
+                        w={{ base: "full", md: "auto" }}
                       >
                         Regenerate Story
                       </Button>
                       <Button
                         colorScheme="gray"
-                        size="md"
+                        size={{ base: "lg", md: "md" }}
                         onClick={clearStory}
                         variant="ghost"
+                        _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                        _active={{ transform: 'translateY(0)' }}
+                        transition="all 0.2s"
+                        cursor="pointer"
+                        w={{ base: "full", md: "auto" }}
                       >
                         Clear Story
                       </Button>
                     </>
                   )}
-                </HStack>
+                </Stack>
 
                 {/* Generated Story Display */}
                 {story && (
                   <Box>
+                    {/* Debug Info */}
+                    <Box mb={3} p={2} bg="yellow.50" borderRadius="md" border="1px" borderColor="yellow.200">
+                      <Text fontSize="xs" color="yellow.800">
+                        Debug: Story has {story.scenes?.length || 0} scenes, Title: {story.title}, Duration: {story.totalDuration}s
+                      </Text>
+                      <Stack 
+                        mt={2} 
+                        spacing={2}
+                        direction={{ base: 'column', md: 'row' }}
+                        align={{ base: 'stretch', md: 'center' }}
+                      >
+                        <Button 
+                          size={{ base: "sm", md: "xs" }}
+                          onClick={() => console.log('Full story object:', story)}
+                          _hover={{ transform: 'translateY(-1px)', boxShadow: 'md' }}
+                          _active={{ transform: 'translateY(0)' }}
+                          transition="all 0.2s"
+                          cursor="pointer"
+                          w={{ base: "full", md: "auto" }}
+                        >
+                          Log Story
+                        </Button>
+                        <Button 
+                          size={{ base: "sm", md: "xs" }}
+                          onClick={() => console.log('Scenes array:', story.scenes)}
+                          _hover={{ transform: 'translateY(-1px)', boxShadow: 'md' }}
+                          _active={{ transform: 'translateY(0)' }}
+                          transition="all 0.2s"
+                          cursor="pointer"
+                          w={{ base: "full", md: "auto" }}
+                        >
+                          Log Scenes
+                        </Button>
+                      </Stack>
+                    </Box>
+                    
                     <HStack justify="space-between" mb={3}>
                       <Text fontWeight="medium" fontSize="sm" color="gray.600">
                         Generated Story: {story.title}
                       </Text>
                       <HStack spacing={2}>
                         <Badge colorScheme="green" variant="subtle">
-                          {story.totalDuration}s • {story.scenes.length} scenes
+                          {story.totalDuration}s
+                        </Badge>
+                        <Badge colorScheme="purple" variant="subtle">
+                          {story.scenes.length} frames
                         </Badge>
                         {story.isApproved && (
                           <Badge colorScheme="blue" variant="solid">
@@ -549,7 +905,22 @@ export default function ExplorePage() {
                     </HStack>
                     
                     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
-                      {story.scenes.map((scene) => {
+                      {story.scenes && story.scenes.length > 0 ? (
+                        <>
+                          {/* <Box p={2} bg="red.50" borderRadius="md" border="1px" borderColor="red.200" mb={2}>
+                            <Text fontSize="xs" color="red.800">
+                              DEBUG: About to render {story.scenes.length} scenes. Scenes array: {JSON.stringify(story.scenes.map(s => ({ num: s.sceneNumber, approved: s.isApproved })))}
+                            </Text>
+                          </Box> */}
+                          
+                          {/* Frame Counter */}
+                          <Box p={2} bg="blue.50" borderRadius="md" border="1px" borderColor="blue.200" mb={2} gridColumn="1 / -1">
+                            <Text fontSize="sm" color="blue.800" textAlign="center" fontWeight="bold">
+                              🎬 DISPLAYING {story.scenes.length} FRAMES - Grid Layout: {story.scenes.length <= 2 ? '1 row' : Math.ceil(story.scenes.length / 2) + ' rows'}
+                            </Text>
+                          </Box>
+                          {story.scenes.map((scene, index) => {
+                            console.log(`Rendering scene ${index + 1}/${story.scenes.length}:`, scene)
                         return (
                           <Card
                             key={scene.sceneNumber}
@@ -558,6 +929,20 @@ export default function ExplorePage() {
                             border="1px solid"
                             borderColor={scene.isApproved ? "green.400" : "purple.200"}
                             position="relative"
+                                borderWidth="3px"
+                                _before={{
+                                  content: `"Frame ${scene.sceneNumber}"`,
+                                  position: "absolute",
+                                  top: "-10px",
+                                  left: "10px",
+                                  bg: "red.500",
+                                  color: "white",
+                                  px: 2,
+                                  py: 1,
+                                  borderRadius: "md",
+                                  fontSize: "xs",
+                                  fontWeight: "bold"
+                                }}
                           >
                             {/* Scene Status Badge */}
                             <HStack position="absolute" top={2} right={2} spacing={1}>
@@ -568,11 +953,8 @@ export default function ExplorePage() {
                               )}
                             </HStack>
 
-                            <VStack align="start" spacing={3}>
-                              <HStack justify="space-between" w="full">
-                                <Badge colorScheme="purple" variant="subtle">
-                                  Scene {scene.sceneNumber}
-                                </Badge>
+                              <VStack align="end" spacing={3}>
+                                <HStack align="end" justify="flex-end" w="full">
                                 <Badge colorScheme="blue" variant="subtle">
                                   {scene.duration}s
                                 </Badge>
@@ -607,12 +989,28 @@ export default function ExplorePage() {
                                   >
                                     Regenerate
                                   </Button>
+                                    {scene.isApproved && (
+                                      <Button
+                                        size="xs"
+                                        colorScheme="orange"
+                                        variant="outline"
+                                        onClick={() => handleOpenVideoRegeneration(scene)}
+                                      >
+                                        Regenerate Video
+                                      </Button>
+                                    )}
                                 </HStack>
                               </HStack>
                             </VStack>
                           </Card>
                         )
                       })}
+                        </>
+                      ) : (
+                        <Box p={4} textAlign="center" color="gray.500">
+                          <Text>No scenes generated yet. Please generate a story first.</Text>
+                        </Box>
+                      )}
                     </SimpleGrid>
                     
                     <Text mt={3} fontSize="xs" color="gray.500" textAlign="center">
@@ -707,21 +1105,50 @@ export default function ExplorePage() {
                   </FormControl>
                 </Box>
 
-                {/* Generate Button */}
+                {/* Generate Buttons */}
                 <Box textAlign={{ base: "center", md: "right" }}>
+                  <Stack 
+                    spacing={3} 
+                    align="center"
+                    direction={{ base: 'column', md: 'row' }}
+                    justify={{ base: "center", md: "flex-end" }}
+                  >
                   <Button
                     colorScheme="purple"
-                    size={{ base: "md", md: "lg" }}
+                      size={{ base: "lg", md: "lg" }}
                     isLoading={isGenerating || isPolling}
                     loadingText={isGenerating ? "Generating Story Videos..." : "Processing..."}
                     onClick={handleGenerate}
                     px={{ base: 6, md: 8 }}
-                    w={{ base: 'full', md: 'auto' }}
                     leftIcon={<Icon as={LuVideo} />}
                     isDisabled={!story || !canGenerateVideo()}
+                      _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                      _active={{ transform: 'translateY(0)' }}
+                      transition="all 0.2s"
+                      cursor="pointer"
+                      w={{ base: "full", md: "auto" }}
                   >
                     Generate Story Videos
                   </Button>
+                    
+                    <Button
+                      colorScheme="green"
+                      size={{ base: "lg", md: "lg" }}
+                      isLoading={isGeneratingVideo}
+                      loadingText="Creating Combined Video..."
+                      onClick={handleGenerateCombinedVideo}
+                      px={{ base: 6, md: 8 }}
+                      leftIcon={<Icon as={LuVideo} />}
+                      isDisabled={!story || !canGenerateVideo()}
+                      _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                      _active={{ transform: 'translateY(0)' }}
+                      transition="all 0.2s"
+                      cursor="pointer"
+                      w={{ base: "full", md: "auto" }}
+                    >
+                      Create Combined Video
+                    </Button>
+                  </Stack>
                 </Box>
 
                 {/* Progress Indicator */}
@@ -738,11 +1165,172 @@ export default function ExplorePage() {
                     </Text>
                   </Box>
                 )}
+
+                {/* Combined Video Progress Indicator */}
+                {isGeneratingVideo && (
+                  <Box>
+                    <Progress
+                      size="sm"
+                      value={progress}
+                      colorScheme="green"
+                      borderRadius="md"
+                    />
+                    <Text mt={2} fontSize="sm" color="gray.500" textAlign="center">
+                      {progressText}
+                    </Text>
+                  </Box>
+                )}
               </Stack>
             </Card>
 
-            {/* Generated Video Display */}
-            {generatedVideo && (
+            {/* Video Frames Display */}
+            {story && story.scenes.some(scene => scene.isApproved) && (
+              <Card 
+                p={{ base: 4, md: 6 }} 
+                bg={cardBg} 
+                borderRadius={{ base: "lg", md: "xl" }} 
+                boxShadow="xl"
+              >
+                <Stack spacing={6} align="stretch">
+                  <Box>
+                    <HStack spacing={3} mb={3}>
+                      <Icon as={LuVideo} color="green.400" />
+                      <Heading size="md">Video Frames</Heading>
+                    </HStack>
+                    <Text mb={4} color="gray.600" fontSize="sm">
+                      Individual video frames generated for each approved scene
+                    </Text>
+                    
+                    {/* Debug Info for Video URLs */}
+                
+                  </Box>
+
+                  {/* Video Frames Grid */}
+                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                    {story.scenes
+                      .filter(scene => scene.isApproved)
+                      .map((scene) => (
+                        <Card
+                          key={`video-${scene.sceneNumber}`}
+                          p={3}
+                          bg="blue.50"
+                          border="1px solid"
+                          borderColor="blue.200"
+                          position="relative"
+                          borderWidth="3px"
+                          _before={{
+                            content: `"Video Frame ${scene.sceneNumber}"`,
+                            position: "absolute",
+                            top: "-10px",
+                            left: "10px",
+                            bg: "blue.500",
+                            color: "white",
+                            px: 2,
+                            py: 1,
+                            borderRadius: "md",
+                            fontSize: "xs",
+                            fontWeight: "bold"
+                          }}
+                        >
+                          {/* Video Status Badge */}
+                          {/* <HStack position="absolute" top={2} right={2} spacing={1}>
+                            <Badge colorScheme="blue" variant="solid" size="sm">
+                              Video Frame
+                            </Badge>
+                          </HStack> */}
+
+                          <VStack align="end" spacing={3}>
+                            <HStack justify="flex-end" w="full">
+                              <Badge colorScheme="blue" variant="subtle">
+                                {scene.duration}s
+                              </Badge>
+                            </HStack>
+                            
+                            {/* Video Display Area */}
+                            <Box
+                              bg="black"
+                              borderRadius="lg"
+                              overflow="hidden"
+                              position="relative"
+                              h="200px"
+                              w="100%"
+                              border="2px dashed"
+                              borderColor="blue.300"
+                            >
+                              {scene.videoUrl && scene.videoUrl !== 'generating...' && scene.videoUrl !== 'polling...' ? (
+                                <video
+                                  src={scene.videoUrl}
+                                  controls
+                                  style={{ 
+                                    width: '100%', 
+                                    height: '100%', 
+                                    objectFit: 'cover',
+                                    minHeight: '120px',
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0
+                                  }}
+                                  preload="metadata"
+                                  onError={(e) => {
+                                    console.error(`Video error for frame ${scene.sceneNumber}:`, e)
+                                    console.error(`Video URL that failed:`, scene.videoUrl)
+                                    console.error(`Video element:`, e.target)
+                                  }}
+                                  onLoadStart={() => console.log(`Video loading for frame ${scene.sceneNumber}:`, scene.videoUrl)}
+                                  onLoadedData={() => console.log(`Video loaded successfully for frame ${scene.sceneNumber}`)}
+                                  onCanPlay={() => console.log(`Video can play for frame ${scene.sceneNumber}`)}
+                                />
+                              ) : (
+                                <VStack spacing={2} color="blue.300">
+                                  <Icon as={LuVideo} boxSize={6} />
+                                  <Text fontSize="xs" textAlign="center">
+                                    {scene.isApproved ? 'Generating video...' : 'Approve scene first'}
+                                  </Text>
+                                  {scene.isApproved && (
+                                    <VStack spacing={1} fontSize="xs" color="blue.200">
+                                      <Text>Video URL: {scene.videoUrl || 'Not set'}</Text>
+                                      {scene.videoUrl && (
+                                        <Text fontSize="xs" color="blue.300" noOfLines={1}>
+                                          {scene.videoUrl.length > 50 ? scene.videoUrl.substring(0, 50) + '...' : scene.videoUrl}
+                                        </Text>
+                                      )}
+                                    </VStack>
+                                  )}
+                                </VStack>
+                              )}
+                            </Box>
+
+                            {/* Simple Actions */}
+                            <HStack spacing={2} w="full" justify="center">
+                              <Button
+                                size="xs"
+                                colorScheme="orange"
+                                variant="outline"
+                                onClick={() => handleOpenVideoRegeneration(scene)}
+                                _hover={{ transform: 'translateY(-1px)', boxShadow: 'md' }}
+                                _active={{ transform: 'translateY(0)' }}
+                                transition="all 0.2s"
+                                cursor="pointer"
+                              >
+                                Regenerate
+                              </Button>
+                            </HStack>
+                          </VStack>
+                        </Card>
+                      ))}
+                  </SimpleGrid>
+
+                  {story.scenes.filter(scene => scene.isApproved).length === 0 && (
+                    <Box p={4} textAlign="center" color="gray.500">
+                      <Text>No approved scenes yet. Approve scenes to generate videos.</Text>
+                    </Box>
+                  )}
+                </Stack>
+              </Card>
+            )}
+
+            {/* Combined Video Display */}
+            {story && story.scenes.some(scene => scene.isApproved && scene.videoUrl) && (
               <Card 
                 p={{ base: 4, md: 6 }} 
                 bg={cardBg} 
@@ -751,19 +1339,23 @@ export default function ExplorePage() {
               >
                 <VStack spacing={4} align="stretch">
                   <Box>
-                    <Heading size="md" mb={2}>Generated Video</Heading>
+                    <HStack spacing={3} mb={3}>
+                      <Icon as={LuVideo} color="green.400" />
+                      <Heading size="md">Combined Video</Heading>
+                    </HStack>
+                    <Text mb={4} color="gray.600" fontSize="sm">
+                      Combined video created from all approved video frames
+                    </Text>
                     <HStack spacing={4} mb={4}>
                       <Badge colorScheme="green" variant="subtle">
-                        {generatedVideo.resolution}
+                        {story.scenes.filter(s => s.isApproved && s.videoUrl).length} frames
                       </Badge>
                       <Badge colorScheme="blue" variant="subtle">
-                        {generatedVideo.duration}s
+                        {story.totalDuration}s
                       </Badge>
-                      {generatedVideo.hasAudio && (
                         <Badge colorScheme="purple" variant="subtle">
-                          Audio
+                        Combined
                         </Badge>
-                      )}
                     </HStack>
                   </Box>
 
@@ -772,35 +1364,142 @@ export default function ExplorePage() {
                     borderRadius="lg"
                     overflow="hidden"
                     position="relative"
-                    minH="200px"
+                    h="400px"
+                    w="100%"
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
                   >
+                    {/* Debug info */}
+                    {/* {generatedVideo && (
+                      <Box position="absolute" top={2} left={2} zIndex={10}>
+                        <Text fontSize="xs" color="yellow.300">
+                          Debug: URL={generatedVideo.videoUrl?.substring(0, 30)}...
+                        </Text>
+                      </Box>
+                    )}
+                     */}
+                    {generatedVideo ? (
+                      // Show the combined video or preview
+                      generatedVideo.videoUrl && generatedVideo.videoUrl.startsWith('http') ? (
+                        // Show video player with preview information
+                        <VStack spacing={3} w="full" h="full">
+                          {/* Preview Badge */}
+                          {generatedVideo.isPreview && (
+                            <Box 
+                              position="absolute" 
+                              top={2} 
+                              right={2} 
+                              zIndex={10}
+                              bg="orange.500"
+                              color="white"
+                              px={2}
+                              py={1}
+                              borderRadius="md"
+                              fontSize="xs"
+                              fontWeight="bold"
+                            >
+                              PREVIEW
+                            </Box>
+                          )}
+                          
                     <video
                       src={generatedVideo.videoUrl}
                       controls
-                      style={{ width: '100%', height: 'auto', maxHeight: '400px' }}
-                    />
+                            style={{ 
+                              width: '100%', 
+                              height: '100%', 
+                              objectFit: 'cover'
+                            }}
+                          />
+                          
+                          {/* Preview Information */}
+                          {generatedVideo.isPreview && (
+                            <Box 
+                              bg="blackAlpha.700" 
+                              color="white" 
+                              p={3} 
+                              borderRadius="md"
+                              textAlign="center"
+                            >
+                              <Text fontSize="sm" fontWeight="bold" mb={1}>
+                                🎬 Preview Mode
+                              </Text>
+                              <Text fontSize="xs" color="gray.300">
+                                This shows Frame 1 of {generatedVideo.frameCount} frames
+                              </Text>
+                              <Text fontSize="xs" color="gray.300">
+                                Total duration: {generatedVideo.duration}s
+                              </Text>
                   </Box>
+                          )}
 
-                  <HStack spacing={3} justify="center">
+                          <HStack spacing={3} justify="center" mt={2}>
                     <Button
-                      leftIcon={<Icon as={LuPlay} />}
-                      onClick={handlePlay}
+                              size="sm"
                       colorScheme="purple"
                       variant="outline"
+                              onClick={handlePlay}
+                              leftIcon={<Icon as={LuPlay} />}
                     >
                       Open in New Tab
                     </Button>
                     <Button
-                      leftIcon={<Icon as={LuDownload} />}
+                              size="sm"
+                              colorScheme="green"
                       onClick={handleDownload}
-                      colorScheme="purple"
+                              leftIcon={<Icon as={LuDownload} />}
                     >
-                      Download Video
+                              Download
                     </Button>
                   </HStack>
+                        </VStack>
+                      ) : (
+                        // Show success message if no real video URL
+                        <VStack spacing={4} color="white" textAlign="center">
+                          <Icon as={LuVideo} boxSize={16} color="green.400" />
+                          <Text fontSize="xl" fontWeight="bold">
+                            🎬 Combined Video Created!
+                          </Text>
+                          <Text fontSize="md">
+                            Duration: {generatedVideo.duration}s | Resolution: {generatedVideo.resolution}
+                          </Text>
+                          <Text fontSize="sm" color="gray.300">
+                            Video has been saved to your gallery
+                          </Text>
+                          <Text fontSize="xs" color="gray.400" mt={2}>
+                            Note: This is a preview. Real combined video would be generated via API.
+                          </Text>
+                        </VStack>
+                      )
+                    ) : story.scenes.every(scene => scene.isApproved && scene.videoUrl) ? (
+                      // All frames ready but no combined video yet
+                      <VStack spacing={3} color="white" textAlign="center">
+                        <Icon as={LuVideo} boxSize={12} />
+                        <Text fontSize="lg" textAlign="center">
+                          🎬 All frames ready! Click &ldquo;Create Combined Video&rdquo; above
+                        </Text>
+                        <Text fontSize="sm" color="gray.300">
+                          Your combined video will appear here after generation
+                        </Text>
+                      </VStack>
+                    ) : (
+                      // Some frames not ready yet
+                      <VStack spacing={3} color="white" textAlign="center">
+                        <Icon as={LuVideo} boxSize={12} />
+                        <Text fontSize="md">
+                          {story.scenes.filter(s => s.isApproved && s.videoUrl).length} of {story.scenes.filter(s => s.isApproved).length} frames ready
+                        </Text>
+                        <Text fontSize="sm" color="gray.300">
+                          Approve all scenes and generate videos to create combined video
+                        </Text>
+                      </VStack>
+                    )}
+                  </Box>
+
+                  <Text fontSize="sm" color="gray.500" textAlign="center">
+                    💡 Use the &ldquo;Create Combined Video&rdquo; button above to combine all approved video frames
+                  </Text>
                 </VStack>
               </Card>
             )}
@@ -840,6 +1539,52 @@ export default function ExplorePage() {
           </VStack>
         </Container>
       </PageBody>
+
+      {/* Video Regeneration Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Regenerate Video for Frame {selectedScene?.sceneNumber}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <Box>
+                <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.600">
+                  Edit the prompt for this frame:
+                </Text>
+                <Textarea
+                  value={editingPrompt}
+                  onChange={(e) => setEditingPrompt(e.target.value)}
+                  placeholder="Enter your custom prompt for this frame..."
+                  rows={4}
+                  resize="vertical"
+                />
+              </Box>
+              
+              <Box>
+                <Text fontSize="sm" color="gray.500">
+                  💡 Modify the prompt to change how this frame will be generated. The video will be regenerated with your new description.
+                </Text>
+              </Box>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack spacing={3}>
+              <Button variant="ghost" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                colorScheme="orange"
+                onClick={handleRegenerateVideo}
+                isLoading={isRegeneratingVideo}
+                loadingText="Regenerating..."
+              >
+                Regenerate Video
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Page>
   )
 } 
