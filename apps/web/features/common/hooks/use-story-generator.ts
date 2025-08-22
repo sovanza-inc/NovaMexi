@@ -14,6 +14,8 @@ export interface Story {
   title: string
   scenes: StoryScene[]
   totalDuration: number
+  customDuration: number
+  frameDuration: number
   isApproved: boolean
 }
 
@@ -22,9 +24,14 @@ export function useStoryGenerator() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const generateStory = useCallback(async (title: string): Promise<Story | null> => {
+  const generateStory = useCallback(async (title: string, customDuration: number = 60): Promise<Story | null> => {
     if (!title.trim()) {
       setError('Story title is required')
+      return null
+    }
+
+    if (customDuration < 8) {
+      setError('Video duration must be at least 8 seconds')
       return null
     }
 
@@ -36,68 +43,110 @@ export function useStoryGenerator() {
       // In a real implementation, this would call an AI API
       await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API delay
 
+      // Calculate optimal frame count and duration
+      const frameDuration = 8 // Each frame is 8 seconds
+      const frameCount = Math.ceil(customDuration / frameDuration)
+      const lastFrameDuration = customDuration % frameDuration || frameDuration
+
       const generatedStory: Story = {
         title: title.trim(),
-        scenes: [
-          {
-            sceneNumber: 1,
-            description: "Opening scene establishing the setting and main character",
-            prompt: `Opening scene: ${title} - establishing shot, cinematic lighting, professional quality`,
-            duration: 8,
-            isApproved: false
-          },
-          {
-            sceneNumber: 2,
-            description: "Character introduction and initial conflict setup",
-            prompt: `Character introduction: ${title} - close-up shot, emotional expression, dramatic lighting`,
-            duration: 8,
-            isApproved: false
-          },
-          {
-            sceneNumber: 3,
-            description: "Rising action and development of the story",
-            prompt: `Rising action: ${title} - dynamic movement, tension building, cinematic composition`,
-            duration: 8,
-            isApproved: false
-          },
-          {
-            sceneNumber: 4,
-            description: "Midpoint revelation or turning point",
-            prompt: `Midpoint revelation: ${title} - dramatic moment, intense lighting, emotional impact`,
-            duration: 8,
-            isApproved: false
-          },
-          {
-            sceneNumber: 5,
-            description: "Escalation of conflict and challenges",
-            prompt: `Conflict escalation: ${title} - action sequence, fast-paced movement, dramatic angles`,
-            duration: 8,
-            isApproved: false
-          },
-          {
-            sceneNumber: 6,
-            description: "Climax and peak of the story",
-            prompt: `Climax: ${title} - intense action, dramatic lighting, emotional peak`,
-            duration: 8,
-            isApproved: false
-          },
-          {
-            sceneNumber: 7,
-            description: "Resolution and falling action",
-            prompt: `Resolution: ${title} - calming atmosphere, resolution of tension, peaceful setting`,
-            duration: 8,
-            isApproved: false
-          },
-          {
-            sceneNumber: 8,
-            description: "Conclusion and final moments",
-            prompt: `Conclusion: ${title} - final shot, emotional closure, cinematic ending`,
-            duration: 8,
-            isApproved: false
-          }
-        ],
-        totalDuration: 64,
+        customDuration,
+        frameDuration,
+        scenes: [],
+        totalDuration: customDuration,
         isApproved: false
+      }
+
+      // Generate scenes based on calculated frame count
+      for (let i = 1; i <= frameCount; i++) {
+        const isLastFrame = i === frameCount
+        const sceneDuration = isLastFrame && lastFrameDuration !== frameDuration ? lastFrameDuration : frameDuration
+        
+        let sceneDescription = ""
+        let scenePrompt = ""
+        
+        if (frameCount === 1) {
+          // Single frame story
+          sceneDescription = "Complete story in a single scene"
+          scenePrompt = `${title} - complete narrative, full story arc, cinematic quality, ${sceneDuration} seconds`
+        } else if (frameCount === 2) {
+          // Two frame story
+          if (i === 1) {
+            sceneDescription = "Opening and setup - beginning of the story"
+            scenePrompt = `Opening scene: ${title} - establishing shot, story setup, introduction, ${sceneDuration} seconds`
+          } else {
+            sceneDescription = "Climax and resolution - conclusion of the story"
+            scenePrompt = `Conclusion: ${title} - story climax, resolution, ending, ${sceneDuration} seconds`
+          }
+        } else if (frameCount === 3) {
+          // Three frame story
+          if (i === 1) {
+            sceneDescription = "Opening and introduction"
+            scenePrompt = `Opening: ${title} - establishing shot, character introduction, ${sceneDuration} seconds`
+          } else if (i === 2) {
+            sceneDescription = "Development and conflict"
+            scenePrompt = `Development: ${title} - rising action, conflict building, ${sceneDuration} seconds`
+          } else {
+            sceneDescription = "Climax and resolution"
+            scenePrompt = `Resolution: ${title} - climax, story conclusion, ${sceneDuration} seconds`
+          }
+        } else {
+          // Four or more frame story (classic structure)
+          if (i === 1) {
+            sceneDescription = "Opening scene establishing the setting and main character"
+            scenePrompt = `Opening scene: ${title} - establishing shot, cinematic lighting, professional quality, ${sceneDuration} seconds`
+          } else if (i === 2) {
+            sceneDescription = "Character introduction and initial conflict setup"
+            scenePrompt = `Character introduction: ${title} - close-up shot, emotional expression, dramatic lighting, ${sceneDuration} seconds`
+          } else if (i === 3) {
+            sceneDescription = "Rising action and development of the story"
+            scenePrompt = `Rising action: ${title} - dynamic movement, tension building, cinematic composition, ${sceneDuration} seconds`
+          } else if (i === 4) {
+            if (frameCount === 4) {
+              sceneDescription = "Climax and resolution"
+              scenePrompt = `Climax and resolution: ${title} - intense action, dramatic lighting, story conclusion, ${sceneDuration} seconds`
+            } else {
+              sceneDescription = "Midpoint revelation or turning point"
+              scenePrompt = `Midpoint revelation: ${title} - dramatic moment, intense lighting, emotional impact, ${sceneDuration} seconds`
+            }
+          } else if (i === 5) {
+            if (frameCount === 5) {
+              sceneDescription = "Climax and resolution"
+              scenePrompt = `Climax and resolution: ${title} - intense action, dramatic lighting, story conclusion, ${sceneDuration} seconds`
+            } else {
+              sceneDescription = "Escalation of conflict and challenges"
+              scenePrompt = `Conflict escalation: ${title} - action sequence, fast-paced movement, dramatic angles, ${sceneDuration} seconds`
+            }
+          } else if (i === 6) {
+            if (frameCount === 6) {
+              sceneDescription = "Climax and resolution"
+              scenePrompt = `Climax and resolution: ${title} - intense action, dramatic lighting, story conclusion, ${sceneDuration} seconds`
+            } else {
+              sceneDescription = "Climax and peak of the story"
+              scenePrompt = `Climax: ${title} - intense action, dramatic lighting, emotional peak, ${sceneDuration} seconds`
+            }
+          } else if (i === 7) {
+            if (frameCount === 7) {
+              sceneDescription = "Climax and resolution"
+              scenePrompt = `Climax and resolution: ${title} - intense action, dramatic lighting, story conclusion, ${sceneDuration} seconds`
+            } else {
+              sceneDescription = "Resolution and falling action"
+              scenePrompt = `Resolution: ${title} - calming atmosphere, resolution of tension, peaceful setting, ${sceneDuration} seconds`
+            }
+          } else {
+            // Last frame (8 or more)
+            sceneDescription = "Conclusion and final moments"
+            scenePrompt = `Conclusion: ${title} - final shot, emotional closure, cinematic ending, ${sceneDuration} seconds`
+          }
+        }
+
+        generatedStory.scenes.push({
+          sceneNumber: i,
+          description: sceneDescription,
+          prompt: scenePrompt,
+          duration: sceneDuration,
+          isApproved: false
+        })
       }
 
       setStory(generatedStory)
@@ -111,11 +160,12 @@ export function useStoryGenerator() {
     }
   }, [])
 
-  const regenerateStory = useCallback(async (title: string): Promise<Story | null> => {
+  const regenerateStory = useCallback(async (title: string, customDuration?: number): Promise<Story | null> => {
     // Clear current story and generate a new one
     setStory(null)
-    return generateStory(title)
-  }, [generateStory])
+    const duration = customDuration || story?.customDuration || 60
+    return generateStory(title, duration)
+  }, [generateStory, story?.customDuration])
 
   const regenerateScene = useCallback(async (sceneNumber: number, title: string): Promise<void> => {
     if (!story) return
@@ -124,11 +174,14 @@ export function useStoryGenerator() {
       // Simulate AI scene regeneration
       await new Promise(resolve => setTimeout(resolve, 1000))
 
+      const scene = story.scenes.find(s => s.sceneNumber === sceneNumber)
+      if (!scene) return
+
       const newScene: StoryScene = {
         sceneNumber,
         description: `Regenerated scene ${sceneNumber} for ${title}`,
-        prompt: `Regenerated scene ${sceneNumber}: ${title} - fresh perspective, creative angle, enhanced quality`,
-        duration: 8,
+        prompt: `Regenerated scene ${sceneNumber}: ${title} - fresh perspective, creative angle, enhanced quality, ${scene.duration} seconds`,
+        duration: scene.duration,
         isApproved: false
       }
 
@@ -213,6 +266,31 @@ export function useStoryGenerator() {
     return story.isApproved && story.scenes.every(scene => scene.isApproved)
   }, [story])
 
+  const getFrameCount = useCallback((): number => {
+    if (!story) return 0
+    return story.scenes.length
+  }, [story])
+
+  const getTotalDuration = useCallback((): number => {
+    if (!story) return 0
+    return story.scenes.reduce((total, scene) => total + scene.duration, 0)
+  }, [story])
+
+  const updateSceneVideoUrl = useCallback((sceneNumber: number, videoUrl: string): void => {
+    setStory(prev => {
+      if (!prev) return prev
+      const updatedScenes = prev.scenes.map(scene => 
+        scene.sceneNumber === sceneNumber 
+          ? { ...scene, videoUrl }
+          : scene
+      )
+      return {
+        ...prev,
+        scenes: updatedScenes
+      }
+    })
+  }, [])
+
   return {
     story,
     isGenerating,
@@ -227,5 +305,8 @@ export function useStoryGenerator() {
     getScenePrompt,
     getApprovedScenes,
     canGenerateVideo,
+    getFrameCount,
+    getTotalDuration,
+    updateSceneVideoUrl,
   }
 }
