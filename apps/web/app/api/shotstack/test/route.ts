@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { ShotstackAPI, ShotstackRenderRequest } from '#lib/shotstack-api'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const apiKey = process.env.SHOTSTACK_API_KEY
     if (!apiKey) {

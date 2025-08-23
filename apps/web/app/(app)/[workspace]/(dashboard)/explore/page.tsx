@@ -21,7 +21,6 @@ import {
   Badge,
   Progress,
   Icon,
-  Input,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -77,7 +76,7 @@ export default function ExplorePage() {
     clearError,
   } = useVEO3API()
   const { saveVideo } = useVideoStorage()
-  const { mergeVideos, isMerging, progress: mergeProgress, error: mergeError } = useShotstack()
+  const { mergeVideos } = useShotstack()
   
   // Video regeneration modal state
   const { isOpen, onOpen, onClose } = useDisclosure()
