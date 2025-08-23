@@ -37,6 +37,7 @@ import { PageHeader } from '#features/common/components/page-header'
 import { useVEO3API } from '#features/common/hooks/use-veo3-api'
 import { useVideoStorage } from '#features/common/hooks/use-video-storage'
 import { useStoryGenerator, type StoryScene } from '#features/common/hooks/use-story-generator'
+import { useShotstack } from '#features/common/hooks/use-shotstack'
 import { LuVideo, LuDownload, LuPlay, LuBookOpen, LuRefreshCw } from 'react-icons/lu'
 
 const hints = [
@@ -48,7 +49,7 @@ const hints = [
 
 export default function ExplorePage() {
   const [storyTitle, setStoryTitle] = useState('')
-  const [customDuration, setCustomDuration] = useState(60)
+  const [customDuration, setCustomDuration] = useState(8)
   const [model, setModel] = useState<'veo3-fast' | 'veo3-quality'>('veo3-fast')
   const [resolution, setResolution] = useState<'720p' | '1080p'>('720p')
   const [audio, setAudio] = useState(true)
@@ -76,6 +77,7 @@ export default function ExplorePage() {
     clearError,
   } = useVEO3API()
   const { saveVideo } = useVideoStorage()
+  const { mergeVideos, isMerging, progress: mergeProgress, error: mergeError } = useShotstack()
   
   // Video regeneration modal state
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -293,28 +295,12 @@ export default function ExplorePage() {
           console.log(`Scene ${scene.sceneNumber} pollStatus result:`, result)
           
           if (result && result.result) {
-            // Save individual scene video
-            const savedVideo = saveVideo({
-              videoUrl: result.result.videoUrl,
-              prompt: scene.prompt,
-              model,
-              resolution,
-              duration: result.result.duration,
-              hasAudio: result.result.hasAudio,
-              taskId: generateResponse.taskId,
-            })
-
-            console.log(`Scene ${scene.sceneNumber} video saved:`, savedVideo)
-            
-            // Update the story scene with the video URL
+            // Update the story scene with the video URL (don't save to gallery yet)
             console.log(`Updating scene ${scene.sceneNumber} with video URL:`, result.result.videoUrl)
             updateSceneVideoUrl(scene.sceneNumber, result.result.videoUrl)
             console.log(`Scene ${scene.sceneNumber} update function called`)
             
-            // Notify gallery
-            setTimeout(() => {
-              window.dispatchEvent(new CustomEvent('videoSaved', { detail: savedVideo }))
-            }, 100)
+            // Don't save individual frames to gallery - only the combined video will be saved
 
             return result.result
           }
@@ -331,7 +317,7 @@ export default function ExplorePage() {
       if (successfulVideos.length > 0) {
         toast({
           title: 'Story Videos Generated Successfully!',
-          description: `${successfulVideos.length} scene videos have been created and saved to your gallery.`,
+          description: `${successfulVideos.length} scene videos have been created. Click "Create Combined Video" to merge them and save to gallery.`,
           status: 'success',
           duration: 5000,
           isClosable: true,
@@ -422,65 +408,66 @@ export default function ExplorePage() {
     }
   }
 
-  // Generate combined video from all frame videos
+  // Generate combined video from all frame videos using Shotstack
   const handleGenerateCombinedVideo = async () => {
     if (!story) return
 
     setIsGeneratingVideo(true)
     setProgress(0)
-    setProgressText('Creating combined video...')
+    setProgressText('Creating combined video with Shotstack...')
 
     try {
-      // This would call an API to combine all frame videos
-      // For now, we'll simulate the process
+      // Get all approved scenes with video URLs
+      const approvedScenes = story.scenes.filter(scene => scene.isApproved && scene.videoUrl)
+      
+      if (approvedScenes.length === 0) {
+        throw new Error('No approved scenes with videos found')
+      }
+
+      console.log('Starting video merge with Shotstack...')
+      console.log('Approved scenes:', approvedScenes.length)
+      console.log('Video URLs:', approvedScenes.map(s => s.videoUrl))
+
       setProgress(25)
-      setProgressText('Analyzing video frames...')
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      setProgressText('Preparing video frames for merging...')
+
+      // Extract video URLs from approved scenes
+      const videoUrls = approvedScenes.map(scene => scene.videoUrl!)
+      const frameDuration = 8 // Each frame is 8 seconds
+
       setProgress(50)
-      setProgressText('Combining video segments...')
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      setProgressText('Merging videos with Shotstack API...')
+
+      // Use Shotstack to merge all videos
+      const mergedVideoUrl = await mergeVideos(videoUrls, frameDuration)
       
+      console.log('Video merge completed successfully!')
+      console.log('Merged video URL:', mergedVideoUrl)
+
       setProgress(75)
       setProgressText('Finalizing combined video...')
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Create a combined video object using the first scene's video as a preview
-      // In a real implementation, this would be an API call to combine all videos
-      const firstSceneWithVideo = story.scenes.find(scene => scene.isApproved && scene.videoUrl)
-      
-      console.log('First scene with video:', firstSceneWithVideo)
-      console.log('Video URL found:', firstSceneWithVideo?.videoUrl)
-      
-      // For now, we'll show the first scene's video as a preview of what the combined video would look like
-      // In a real implementation, this would be an API call to actually combine all videos
-      console.log('Creating combined video with URL:', firstSceneWithVideo?.videoUrl)
-      console.log('Story total duration:', story.totalDuration)
-      console.log('Resolution:', resolution)
-      console.log('Audio enabled:', audio)
-      
+
+      // Create the combined video object with the real merged video
       const combinedVideo = {
-        videoUrl: firstSceneWithVideo?.videoUrl || '',
-        duration: story.totalDuration, // This should be the total story duration
+        videoUrl: mergedVideoUrl,
+        duration: story.totalDuration,
         resolution,
         hasAudio: audio,
         isCombined: true,
-        isPreview: true, // Mark this as a preview
-        frameCount: story.scenes.filter(s => s.isApproved && s.videoUrl).length,
-        totalDuration: story.totalDuration, // Store the actual total duration
-        frameDuration: 8, // Each frame is 8 seconds
+        isPreview: false, // This is now a real combined video, not a preview
+        frameCount: approvedScenes.length,
+        totalDuration: story.totalDuration,
+        frameDuration: frameDuration,
       }
       
       console.log('Combined video object created:', combinedVideo)
-      console.log('Story total duration being used:', story.totalDuration)
-      console.log('Number of approved frames:', story.scenes.filter(s => s.isApproved && s.videoUrl).length)
 
-      // Save combined video to gallery with proper identification
+      // Save combined video to gallery
       const saveData = {
-        prompt: `🎬 COMBINED VIDEO: ${story.title} (${story.scenes.filter(s => s.isApproved && s.videoUrl).length} frames, ${story.totalDuration}s total)`,
-        model: 'veo3-quality',
-        videoUrl: combinedVideo.videoUrl,
-        duration: story.totalDuration, // Use story total duration, not frame duration
+        prompt: `🎬 COMBINED VIDEO: ${story.title} (${approvedScenes.length} frames, ${story.totalDuration}s total)`,
+        model: 'shotstack-merge',
+        videoUrl: mergedVideoUrl,
+        duration: story.totalDuration,
         resolution: combinedVideo.resolution,
         hasAudio: combinedVideo.hasAudio,
         taskId: `combined_${Date.now()}`,
@@ -493,28 +480,31 @@ export default function ExplorePage() {
       console.log('Combined video saved to gallery:', savedVideo)
 
       // Notify gallery page about the new combined video
-      setTimeout(() => {
+    setTimeout(() => {
         window.dispatchEvent(new CustomEvent('videoSaved', { detail: savedVideo }))
       }, 100)
 
       setProgress(100)
       setGeneratedVideo(combinedVideo)
-      setProgressText('Combined video created successfully!')
+      setProgressText('Combined video created successfully with Shotstack!')
       
       toast({
-        title: 'Success!',
-        description: 'Combined video has been created and saved to gallery!',
+        title: 'Success! 🎬',
+        description: 'Real combined video has been created and saved to gallery!',
         status: 'success',
         duration: 5000,
         isClosable: true,
       })
     } catch (err) {
       console.error('Combined video generation error:', err)
+      
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+      
       toast({
         title: 'Error',
-        description: 'Failed to create combined video. Please try again.',
+        description: `Failed to create combined video: ${errorMessage}`,
         status: 'error',
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       })
     } finally {
@@ -693,21 +683,21 @@ export default function ExplorePage() {
                   <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.600">
                     Story Title
                   </Text>
-                  <Textarea
+                <Textarea
                     value={storyTitle}
                     onChange={(e) => setStoryTitle(e.target.value)}
                     placeholder="Enter your story title (e.g., 'The Adventure Begins', 'Love in Paris', 'Mystery at Midnight')"
-                    size="lg"
+                  size="lg"
                     minH="80px"
-                    resize="none"
-                    bg="transparent"
-                    fontSize={{ base: "sm", md: "md" }}
-                    p={{ base: 3, md: 4 }}
-                    _focus={{
-                      borderColor: 'purple.400',
-                      boxShadow: '0 0 0 1px var(--chakra-colors-purple-400)',
-                    }}
-                  />
+                  resize="none"
+                  bg="transparent"
+                  fontSize={{ base: "sm", md: "md" }}
+                  p={{ base: 3, md: 4 }}
+                  _focus={{
+                    borderColor: 'purple.400',
+                    boxShadow: '0 0 0 1px var(--chakra-colors-purple-400)',
+                  }}
+                />
                 </Box>
 
                 {/* Video Duration Input */}
@@ -717,42 +707,21 @@ export default function ExplorePage() {
                   </Text>
                   <VStack spacing={4} align="stretch">
                     <FormControl>
-                      <FormLabel fontSize="sm">Select from Preset Durations</FormLabel>
+                      <FormLabel fontSize="sm">Select Duration</FormLabel>
                       <Select
                         placeholder="Choose duration"
+                        value={customDuration}
                         onChange={(e) => setCustomDuration(Number(e.target.value))}
                         size="md"
                       >
                         <option value={8}>8s</option>
                         <option value={16}>16s</option>
                         <option value={24}>24s</option>
-                        <option value={30}>30s</option>
                         <option value={32}>32s</option>
                         <option value={40}>40s</option>
-                        <option value={45}>45s</option>
                         <option value={48}>48s</option>
-                        <option value={50}>50s</option>
-                        <option value={55}>55s</option>
-                        <option value={56}>56s</option>
                         <option value={60}>60s</option>
                       </Select>
-                    </FormControl>
-                    
-                    <FormControl>
-                      <FormLabel fontSize="sm">Or Enter Custom Duration</FormLabel>
-                      <Input
-                        type="number"
-                        placeholder="Enter duration (8-60 seconds)"
-                        min={8}
-                        max={60}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          const value = Number(e.target.value)
-                          if (value >= 8 && value <= 60) {
-                            setCustomDuration(value)
-                          }
-                        }}
-                        size="md"
-                      />
                     </FormControl>
                     
                     {customDuration > 0 && (
@@ -762,17 +731,17 @@ export default function ExplorePage() {
                             Duration: {customDuration} seconds
                           </Text>
                           <Badge colorScheme="blue" variant="solid">
-                            {Math.ceil(customDuration / 8)} frames
+                            {customDuration / 8} frames
                           </Badge>
                         </HStack>
                         <Text fontSize="xs" color="blue.600" mt={1}>
-                          Each frame is 8 seconds (last frame adjusts to fill remaining time)
+                          Each frame is exactly 8 seconds
                         </Text>
                       </Box>
                     )}
                   </VStack>
                   <Text mt={3} fontSize="xs" color="gray.500">
-                    💡 Each frame is 8 seconds. Last frame adjusts to fill remaining time. Maximum: 60 seconds.
+                    💡 Each frame is exactly 8 seconds. Perfect for VEO3 API compatibility.
                   </Text>
                 </Box>
 
@@ -1380,32 +1349,15 @@ export default function ExplorePage() {
                     )}
                      */}
                     {generatedVideo ? (
-                      // Show the combined video or preview
+                      // Show the real combined video
                       generatedVideo.videoUrl && generatedVideo.videoUrl.startsWith('http') ? (
-                        // Show video player with preview information
+                        // Show video player for real combined video
                         <VStack spacing={3} w="full" h="full">
-                          {/* Preview Badge */}
-                          {generatedVideo.isPreview && (
-                            <Box 
-                              position="absolute" 
-                              top={2} 
-                              right={2} 
-                              zIndex={10}
-                              bg="orange.500"
-                              color="white"
-                              px={2}
-                              py={1}
-                              borderRadius="md"
-                              fontSize="xs"
-                              fontWeight="bold"
-                            >
-                              PREVIEW
-                            </Box>
-                          )}
+
                           
-                    <video
-                      src={generatedVideo.videoUrl}
-                      controls
+                          <video
+                            src={generatedVideo.videoUrl}
+                            controls
                             style={{ 
                               width: '100%', 
                               height: '100%', 
@@ -1413,49 +1365,47 @@ export default function ExplorePage() {
                             }}
                           />
                           
-                          {/* Preview Information */}
-                          {generatedVideo.isPreview && (
-                            <Box 
-                              bg="blackAlpha.700" 
-                              color="white" 
-                              p={3} 
-                              borderRadius="md"
-                              textAlign="center"
-                            >
-                              <Text fontSize="sm" fontWeight="bold" mb={1}>
-                                🎬 Preview Mode
-                              </Text>
-                              <Text fontSize="xs" color="gray.300">
-                                This shows Frame 1 of {generatedVideo.frameCount} frames
-                              </Text>
-                              <Text fontSize="xs" color="gray.300">
-                                Total duration: {generatedVideo.duration}s
-                              </Text>
-                  </Box>
-                          )}
+                          {/* Video Information */}
+                          <Box 
+                            bg="blackAlpha.700" 
+                            color="white" 
+                            p={3} 
+                            borderRadius="md"
+                            textAlign="center"
+                          >
+                            <Text fontSize="sm" fontWeight="bold" mb={1}>
+                              🎬 Combined Video Created with Shotstack!
+                            </Text>
+                            <Text fontSize="xs" color="gray.300">
+                              {generatedVideo.frameCount} frames merged into {generatedVideo.duration}s video
+                            </Text>
+                            <Text fontSize="xs" color="gray.300">
+                              Resolution: {generatedVideo.resolution} | Audio: {generatedVideo.hasAudio ? 'Yes' : 'No'}
+                            </Text>
+                          </Box>
 
                           <HStack spacing={3} justify="center" mt={2}>
-                    <Button
+                            <Button
                               size="sm"
-                      colorScheme="purple"
-                      variant="outline"
+                              colorScheme="purple"
+                              variant="outline"
                               onClick={handlePlay}
                               leftIcon={<Icon as={LuPlay} />}
-                    >
-                      Open in New Tab
-                    </Button>
-                    <Button
+                            >
+                              Open in New Tab
+                            </Button>
+                            <Button
                               size="sm"
                               colorScheme="green"
-                      onClick={handleDownload}
+                              onClick={handleDownload}
                               leftIcon={<Icon as={LuDownload} />}
-                    >
+                            >
                               Download
-                    </Button>
-                  </HStack>
+                            </Button>
+                          </HStack>
                         </VStack>
                       ) : (
-                        // Show success message if no real video URL
+                        // Show success message for combined video
                         <VStack spacing={4} color="white" textAlign="center">
                           <Icon as={LuVideo} boxSize={16} color="green.400" />
                           <Text fontSize="xl" fontWeight="bold">
@@ -1468,7 +1418,7 @@ export default function ExplorePage() {
                             Video has been saved to your gallery
                           </Text>
                           <Text fontSize="xs" color="gray.400" mt={2}>
-                            Note: This is a preview. Real combined video would be generated via API.
+                            Real combined video generated via Shotstack API
                           </Text>
                         </VStack>
                       )
