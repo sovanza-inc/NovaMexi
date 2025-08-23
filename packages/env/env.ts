@@ -25,5 +25,8 @@ export const env = createEnv(
 
     // VEO3 API
     VEO3_API_KEY: z.string().optional(),
+    
+    // Shotstack API
+    SHOTSTACK_API_KEY: z.string().optional(),
   }),
 )
