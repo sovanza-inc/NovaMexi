@@ -901,16 +901,16 @@ export default function ExplorePage() {
                     </FormControl>
                     
                     {customDuration > 0 && (
-                      <Box p={3} bg="blue.50" borderRadius="md" border="1px" borderColor="blue.200">
+                      <Box p={3} bg="gray.800" borderRadius="md" border="1px" borderColor="gray.600">
                         <HStack justify="space-between">
-                          <Text fontSize="sm" fontWeight="medium" color="blue.800">
+                          <Text fontSize="sm" fontWeight="medium" color="white">
                             Duration: {customDuration} seconds
                           </Text>
                           <Badge colorScheme="blue" variant="solid">
                             {customDuration / 8} frames
                           </Badge>
                         </HStack>
-                        <Text fontSize="xs" color="blue.600" mt={1}>
+                        <Text fontSize="xs" color="gray.300" mt={1}>
                           Each frame is exactly 8 seconds
                         </Text>
                       </Box>
@@ -1166,8 +1166,8 @@ export default function ExplorePage() {
                           </Box> */}
                           
                           {/* Frame Counter */}
-                          <Box p={2} bg="blue.50" borderRadius="md" border="1px" borderColor="blue.200" mb={2} gridColumn="1 / -1">
-                            <Text fontSize="sm" color="blue.800" textAlign="center" fontWeight="bold">
+                          <Box p={2} bg="gray.800" borderRadius="md" border="1px" borderColor="gray.600" mb={2} gridColumn="1 / -1">
+                            <Text fontSize="sm" color="white" textAlign="center" fontWeight="bold">
                               🎬 DISPLAYING {story.scenes.length} FRAMES - Grid Layout: {story.scenes.length <= 2 ? '1 row' : Math.ceil(story.scenes.length / 2) + ' rows'}
                             </Text>
                           </Box>
