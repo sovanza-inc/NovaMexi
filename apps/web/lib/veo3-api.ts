@@ -1,47 +1,42 @@
 interface VEO3GenerateRequest {
-  model: 'veo3-fast' | 'veo3-quality'
   prompt: string
-  audio?: boolean
-  options?: {
-    resolution?: '720p' | '1080p'
-    aspectRatio?: '16:9'
-    seed?: number
-    negativePrompt?: string
-    enhancePrompt?: boolean
-  }
+  imageUrls?: string[]
+  model: 'veo3'
+  watermark?: string
+  callBackUrl?: string
+  aspectRatio?: '9:16' | '16:9' | '1:1'
+  seeds?: number
+  enableFallback?: boolean
+  enableTranslation?: boolean
 }
 
 interface VEO3GenerateResponse {
-  success: boolean
-  taskId: string
-  status: 'pending' | 'completed' | 'failed'
-  model: string
-  creditsRequired: number
-  estimatedTime: string
-  error?: string
-  errorType?: string
-  details?: any
+  code: number
+  msg: string
+  data: {
+    taskId: string
+  }
 }
 
 interface VEO3StatusResponse {
-  success: boolean
-  taskId: string
-  status: 'pending' | 'completed' | 'failed'
-  result?: {
-    videoUrl: string
-    duration: number
-    resolution: string
-    aspectRatio: string
-    hasAudio: boolean
-    processingTimeSeconds: number
+  code: number
+  msg: string
+  data: {
+    taskId: string
+    paramJson: string
+    completeTime?: number
+    createTime?: number
+    errorCode?: string | null
+    errorMessage?: string | null
+    fallbackFlag: boolean
+    response?: {
+      taskId: string
+      resultUrls?: string[]
+      originUrls?: string[]
+      seeds?: number[]
+    }
+    successFlag: number
   }
-  credits?: {
-    required: number
-    charged: number
-    refunded: number
-  }
-  error?: string
-  errorType?: string
 }
 
 interface VEO3LogsResponse {
@@ -68,7 +63,7 @@ class VEO3API {
   private baseURL: string
   private apiKey: string
 
-  constructor(apiKey: string, baseURL: string = 'https://api.veo3gen.app') {
+  constructor(apiKey: string, baseURL: string = 'https://api.veo3api.ai') {
     this.baseURL = baseURL
     this.apiKey = apiKey
   }
@@ -105,25 +100,61 @@ class VEO3API {
     options: Partial<VEO3GenerateRequest> = {}
   ): Promise<VEO3GenerateResponse> {
     const body: VEO3GenerateRequest = {
-      model: options.model || 'veo3-fast',
       prompt,
-      audio: options.audio !== false,
-      options: {
-        resolution: options.options?.resolution || '720p',
-        aspectRatio: '16:9',
-        enhancePrompt: options.options?.enhancePrompt !== false,
-        ...options.options,
-      },
+      model: 'veo3',
+      aspectRatio: options.aspectRatio || '9:16',
+      enableFallback: options.enableFallback || false,
+      enableTranslation: options.enableTranslation || true,
+      ...options,
     }
 
-    return this.makeRequest<VEO3GenerateResponse>('/api/generate', {
+    console.log('VEO3 API Request:', {
+      url: `${this.baseURL}/api/v1/veo/generate`,
+      body: body
+    })
+
+    const response = await this.makeRequest<VEO3GenerateResponse>('/api/v1/veo/generate', {
       method: 'POST',
       body: JSON.stringify(body),
     })
+
+    console.log('VEO3 API Response:', response)
+    return response
   }
 
   async checkStatus(taskId: string): Promise<VEO3StatusResponse> {
-    return this.makeRequest<VEO3StatusResponse>(`/api/status/${taskId}`)
+    const response = await this.makeRequest<VEO3StatusResponse>(`/api/v1/veo/record-info?taskId=${taskId}`)
+    console.log('VEO3 checkStatus response:', JSON.stringify(response, null, 2))
+    return response
+  }
+
+  // Get video URL from the correct response structure
+  async getVideoUrl(taskId: string): Promise<string | null> {
+    try {
+      const statusResponse = await this.checkStatus(taskId)
+      
+      // Check if video generation is complete
+      if (statusResponse.data.successFlag === 1 && statusResponse.data.response) {
+        // Try to get watermarked video first, then original
+        const watermarkedUrl = statusResponse.data.response.resultUrls?.[0]
+        const originalUrl = statusResponse.data.response.originUrls?.[0]
+        
+        const videoUrl = watermarkedUrl || originalUrl
+        
+        if (videoUrl) {
+          console.log('Video URL found:', videoUrl)
+          console.log('Watermarked URL:', watermarkedUrl)
+          console.log('Original URL:', originalUrl)
+          return videoUrl
+        }
+      }
+      
+      console.log('No video URL found in response')
+      return null
+    } catch (error) {
+      console.error('Error getting video URL:', error)
+      return null
+    }
   }
 
   async getLogs(params: {
@@ -155,12 +186,14 @@ class VEO3API {
     while (Date.now() - start < maxWaitTime) {
       const status = await this.checkStatus(taskId)
       
-      if (status.status === 'completed') {
+      // Check if video generation is complete
+      if (status.data.successFlag === 1 && status.data.completeTime) {
         return status
       }
       
-      if (status.status === 'failed') {
-        throw new Error(status.error || 'Video generation failed')
+      // Check if video generation failed
+      if (status.data.errorCode || status.data.errorMessage) {
+        throw new Error(status.data.errorMessage || 'Video generation failed')
       }
       
       // Wait before next poll
@@ -176,7 +209,24 @@ class VEO3API {
   ): Promise<VEO3StatusResponse> {
     const { maxWaitTime, ...generateOptions } = options
     const generateResponse = await this.generateVideo(prompt, generateOptions)
-    return this.pollStatus(generateResponse.taskId, maxWaitTime)
+    return this.pollStatus(generateResponse.data.taskId, maxWaitTime)
+  }
+
+  // Helper method to generate video with character consistency using image reference
+  async generateVideoWithCharacterConsistency(
+    prompt: string,
+    characterImageUrl: string,
+    options: Partial<VEO3GenerateRequest> & { maxWaitTime?: number } = {}
+  ): Promise<VEO3StatusResponse> {
+    const generateOptions = {
+      ...options,
+      imageUrls: [characterImageUrl],
+      aspectRatio: options.aspectRatio || '9:16',
+      enableFallback: options.enableFallback || false,
+      enableTranslation: options.enableTranslation || true,
+    }
+
+    return this.generateAndWait(prompt, generateOptions)
   }
 }
 
@@ -186,6 +236,7 @@ let veo3Instance: VEO3API | null = null
 export function getVEO3API(): VEO3API {
   if (!veo3Instance) {
     const apiKey = process.env.VEO3_API_KEY
+    console.log('VEO3_API_KEY exists:', !!apiKey)
     if (!apiKey) {
       throw new Error('VEO3_API_KEY environment variable is not set')
     }

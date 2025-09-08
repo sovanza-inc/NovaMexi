@@ -1,41 +1,43 @@
 import { useState, useCallback } from 'react'
 
 interface VEO3GenerateOptions {
-  model?: 'veo3-fast' | 'veo3-quality'
-  resolution?: '720p' | '1080p'
-  audio?: boolean
-  negativePrompt?: string
-  enhancePrompt?: boolean
+  imageUrls?: string[]
+  model?: 'veo3'
+  watermark?: string
+  callBackUrl?: string
+  aspectRatio?: '9:16' | '16:9' | '1:1'
+  seeds?: number
+  enableFallback?: boolean
+  enableTranslation?: boolean
 }
 
 interface VEO3GenerateResponse {
-  success: boolean
-  taskId: string
-  status: 'pending' | 'completed' | 'failed'
-  model: string
-  creditsRequired: number
-  estimatedTime: string
-  error?: string
+  code: number
+  msg: string
+  data: {
+    taskId: string
+  }
 }
 
 interface VEO3StatusResponse {
-  success: boolean
-  taskId: string
-  status: 'pending' | 'completed' | 'failed'
-  result?: {
-    videoUrl: string
-    duration: number
-    resolution: string
-    aspectRatio: string
-    hasAudio: boolean
-    processingTimeSeconds: number
+  code: number
+  msg: string
+  data: {
+    taskId: string
+    paramJson: string
+    completeTime?: number
+    createTime?: number
+    errorCode?: string | null
+    errorMessage?: string | null
+    fallbackFlag: boolean
+    response?: {
+      taskId: string
+      resultUrls?: string[]
+      originUrls?: string[]
+      seeds?: number[]
+    }
+    successFlag: number
   }
-  credits?: {
-    required: number
-    charged: number
-    refunded: number
-  }
-  error?: string
 }
 
 interface VEO3LogsResponse {
@@ -94,6 +96,8 @@ export function useVEO3API() {
         throw new Error(data.error || 'Failed to generate video')
       }
 
+      // The API returns the VEO3 response directly, which has the structure:
+      // { code: 200, msg: "success", data: { taskId: "..." } }
       return data
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
@@ -106,7 +110,7 @@ export function useVEO3API() {
 
   const checkStatus = useCallback(async (taskId: string): Promise<VEO3StatusResponse | null> => {
     try {
-      const response = await fetch(`/api/veo3/status/${taskId}`)
+      const response = await fetch(`/api/veo3/record-info?taskId=${taskId}`)
       const data = await response.json()
 
       if (!response.ok) {
@@ -139,12 +143,14 @@ export function useVEO3API() {
           throw new Error('Failed to check status')
         }
 
-        if (status.status === 'completed') {
+        // Check if video generation is complete
+        if (status.data.successFlag === 1 && status.data.completeTime) {
           return status
         }
 
-        if (status.status === 'failed') {
-          throw new Error(status.error || 'Video generation failed')
+        // Check if video generation failed
+        if (status.data.errorCode || status.data.errorMessage) {
+          throw new Error(status.data.errorMessage || 'Video generation failed')
         }
 
         // Wait before next poll
@@ -205,8 +211,24 @@ export function useVEO3API() {
       return null
     }
 
-    return pollStatus(generateResponse.taskId, maxWaitTime)
+    return pollStatus(generateResponse.data.taskId, maxWaitTime)
   }, [generateVideo, pollStatus])
+
+  const generateVideoWithCharacterConsistency = useCallback(async (
+    prompt: string,
+    characterImageUrl: string,
+    options: VEO3GenerateOptions & { maxWaitTime?: number } = {}
+  ): Promise<VEO3StatusResponse | null> => {
+    const generateOptions = {
+      ...options,
+      imageUrls: [characterImageUrl],
+      aspectRatio: options.aspectRatio || '9:16',
+      enableFallback: options.enableFallback || false,
+      enableTranslation: options.enableTranslation || true,
+    }
+
+    return generateAndWait(prompt, generateOptions)
+  }, [generateAndWait])
 
   const clearError = useCallback(() => {
     setError(null)
@@ -218,6 +240,7 @@ export function useVEO3API() {
     pollStatus,
     getLogs,
     generateAndWait,
+    generateVideoWithCharacterConsistency,
     isGenerating,
     isPolling,
     error,
