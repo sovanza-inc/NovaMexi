@@ -4,7 +4,17 @@ import { getVEO3API } from '#lib/veo3-api'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { prompt, model, resolution, audio, negativePrompt, enhancePrompt } = body
+    const { 
+      prompt, 
+      imageUrls, 
+      model, 
+      watermark, 
+      callBackUrl, 
+      aspectRatio, 
+      seeds, 
+      enableFallback, 
+      enableTranslation 
+    } = body
 
     // Validate required fields
     if (!prompt) {
@@ -26,11 +36,14 @@ export async function POST(request: NextRequest) {
 
     // Prepare options
     const options: any = {}
+    if (imageUrls) options.imageUrls = imageUrls
     if (model) options.model = model
-    if (resolution) options.options = { ...options.options, resolution }
-    if (audio !== undefined) options.audio = audio
-    if (negativePrompt) options.options = { ...options.options, negativePrompt }
-    if (enhancePrompt !== undefined) options.options = { ...options.options, enhancePrompt }
+    if (watermark) options.watermark = watermark
+    if (callBackUrl) options.callBackUrl = callBackUrl
+    if (aspectRatio) options.aspectRatio = aspectRatio
+    if (seeds) options.seeds = seeds
+    if (enableFallback !== undefined) options.enableFallback = enableFallback
+    if (enableTranslation !== undefined) options.enableTranslation = enableTranslation
 
     // Generate video
     const result = await veo3API.generateVideo(prompt, options)

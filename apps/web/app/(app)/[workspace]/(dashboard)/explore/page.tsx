@@ -29,15 +29,17 @@ import {
   ModalBody,
   ModalCloseButton,
   useDisclosure,
+  Input,
 } from '@chakra-ui/react'
 import { Page, PageBody } from '@saas-ui-pro/react'
 import { useState, useEffect } from 'react'
 import { PageHeader } from '#features/common/components/page-header'
 import { useVEO3API } from '#features/common/hooks/use-veo3-api'
+import { getVEO3API } from '#lib/veo3-api'
 import { useVideoStorage } from '#features/common/hooks/use-video-storage'
 import { useStoryGenerator, type StoryScene } from '#features/common/hooks/use-story-generator'
 import { useShotstack } from '#features/common/hooks/use-shotstack'
-import { LuVideo, LuDownload, LuPlay, LuBookOpen, LuRefreshCw } from 'react-icons/lu'
+import { LuVideo, LuDownload, LuPlay, LuBookOpen, LuRefreshCw, LuWand } from 'react-icons/lu'
 
 const hints = [
   'A fluffy panda in sunglasses dances on snowy peak',
@@ -49,11 +51,12 @@ const hints = [
 export default function ExplorePage() {
   const [storyTitle, setStoryTitle] = useState('')
   const [customDuration, setCustomDuration] = useState(8)
-  const [model, setModel] = useState<'veo3-fast' | 'veo3-quality'>('veo3-fast')
+  const [model, setModel] = useState<'veo3'>('veo3')
   const [resolution, setResolution] = useState<'720p' | '1080p'>('720p')
   const [audio, setAudio] = useState(true)
   const [negativePrompt, setNegativePrompt] = useState('')
   const [enhancePrompt, setEnhancePrompt] = useState(true)
+  const [characterReferenceImage, setCharacterReferenceImageState] = useState<string | null>(null)
   const [generatedVideo, setGeneratedVideo] = useState<{
     videoUrl: string
     duration: number
@@ -93,17 +96,75 @@ export default function ExplorePage() {
     regenerateScene,
     approveScene,
     approveAllScenes,
+    setCharacterReferenceImage,
+    clearCharacterReferenceImage,
     clearStory,
     clearError: clearStoryError,
     canGenerateVideo,
     updateSceneVideoUrl,
   } = useStoryGenerator()
 
+
+  const validateImageUrl = (url: string): boolean => {
+    try {
+      const urlObj = new URL(url)
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:'
+    } catch {
+      return false
+    }
+  }
+
+  const convertToGenericPrompt = (prompt: string): string => {
+    return prompt
+      // Replace specific character types with generic "character"
+      .replace(/\b(bunny|panda|gentleman|warrior|rabbit|animal|creature|person|individual|protagonist|main character)\b/gi, 'character')
+      .replace(/\b(the bunny|the panda|the gentleman|the warrior|the rabbit|the animal|the creature|the person|the individual|the protagonist|the main character)\b/gi, 'the character')
+      .replace(/\b(a bunny|a panda|a gentleman|a warrior|a rabbit|an animal|a creature|a person|an individual|a protagonist|a main character)\b/gi, 'a character')
+      .replace(/\b(magical bunny|magical panda|magical gentleman|magical warrior|magical rabbit|magical animal|magical creature|magical person|magical individual|magical protagonist|magical main character)\b/gi, 'magical character')
+      .replace(/\b(cute bunny|cute panda|cute gentleman|cute warrior|cute rabbit|cute animal|cute creature|cute person|cute individual|cute protagonist|cute main character)\b/gi, 'cute character')
+      .replace(/\b(3D bunny|3D panda|3D gentleman|3D warrior|3D rabbit|3D animal|3D creature|3D person|3D individual|3D protagonist|3D main character)\b/gi, '3D character')
+      .replace(/\b(cartoon bunny|cartoon panda|cartoon gentleman|cartoon warrior|cartoon rabbit|cartoon animal|cartoon creature|cartoon person|cartoon individual|cartoon protagonist|cartoon main character)\b/gi, 'cartoon character')
+      // Replace possessive forms
+      .replace(/\b(bunny's|panda's|gentleman's|warrior's|rabbit's|animal's|creature's|person's|individual's|protagonist's|main character's)\b/gi, 'character\'s')
+      // Replace action forms
+      .replace(/\b(bunny closes|panda closes|gentleman closes|warrior closes|rabbit closes|animal closes|creature closes|person closes|individual closes|protagonist closes|main character closes)\b/gi, 'character closes')
+      .replace(/\b(bunny opens|panda opens|gentleman opens|warrior opens|rabbit opens|animal opens|creature opens|person opens|individual opens|protagonist opens|main character opens)\b/gi, 'character opens')
+      .replace(/\b(bunny takes|panda takes|gentleman takes|warrior takes|rabbit takes|animal takes|creature takes|person takes|individual takes|protagonist takes|main character takes)\b/gi, 'character takes')
+      .replace(/\b(bunny's playing|panda's playing|gentleman's playing|warrior's playing|rabbit's playing|animal's playing|creature's playing|person's playing|individual's playing|protagonist's playing|main character's playing)\b/gi, 'character\'s playing')
+      .replace(/\b(bunny strums|panda strums|gentleman strums|warrior strums|rabbit strums|animal strums|creature strums|person strums|individual strums|protagonist strums|main character strums)\b/gi, 'character strums')
+      .replace(/\b(bunny begins|panda begins|gentleman begins|warrior begins|rabbit begins|animal begins|creature begins|person begins|individual begins|protagonist begins|main character begins)\b/gi, 'character begins')
+      .replace(/\b(bunny gains|panda gains|gentleman gains|warrior gains|rabbit gains|animal gains|creature gains|person gains|individual gains|protagonist gains|main character gains)\b/gi, 'character gains')
+      .replace(/\b(bunny's dance|panda's dance|gentleman's dance|warrior's dance|rabbit's dance|animal's dance|creature's dance|person's dance|individual's dance|protagonist's dance|main character's dance)\b/gi, 'character\'s dance')
+      .replace(/\b(bunny's journey|panda's journey|gentleman's journey|warrior's journey|rabbit's journey|animal's journey|creature's journey|person's journey|individual's journey|protagonist's journey|main character's journey)\b/gi, 'character\'s journey')
+  }
+
   const handleGenerateStory = async () => {
     if (!storyTitle.trim()) {
       toast({
         title: 'Error',
         description: 'Please enter a story title',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+      return
+    }
+
+    if (!characterReferenceImage || !characterReferenceImage.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Character reference image URL is required',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+      return
+    }
+
+    if (!validateImageUrl(characterReferenceImage)) {
+      toast({
+        title: 'Error',
+        description: 'Please provide a valid image URL (http:// or https://)',
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -132,6 +193,11 @@ export default function ExplorePage() {
         const totalDuration = generatedStory.totalDuration || 0
         console.log('Story details - frames:', frameCount, 'duration:', totalDuration)
         
+        // Set character reference image if available
+        if (characterReferenceImage) {
+          setCharacterReferenceImage(characterReferenceImage)
+        }
+        
         toast({
           title: 'Story Generated Successfully!',
           description: `"${generatedStory.title}" has been created with ${frameCount} scenes (${totalDuration}s total). Approve the scenes to generate videos.`,
@@ -145,6 +211,26 @@ export default function ExplorePage() {
     } catch (err) {
       console.error('Story generation error:', err)
     }
+  }
+
+  // Convert existing story prompts to generic ones
+  const convertStoryToGeneric = () => {
+    if (!story) return
+
+    // Show the conversion for each scene
+    story.scenes.forEach(scene => {
+      const genericPrompt = convertToGenericPrompt(scene.prompt)
+      console.log(`Scene ${scene.sceneNumber} - Original:`, scene.prompt)
+      console.log(`Scene ${scene.sceneNumber} - Generic:`, genericPrompt)
+    })
+
+    toast({
+      title: 'Story Conversion Preview!',
+      description: 'Check the console to see how your story prompts will be converted to generic terms. Click "Regenerate Story" to apply the changes.',
+      status: 'info',
+      duration: 5000,
+      isClosable: true,
+    })
   }
 
   const handleRegenerateStory = async () => {
@@ -270,14 +356,38 @@ export default function ExplorePage() {
       const videoPromises = approvedScenes.map(async (scene) => {
         try {
           console.log(`Starting video generation for Scene ${scene.sceneNumber} with prompt:`, scene.prompt)
-          
-          const generateResponse = await generateVideo(scene.prompt, {
-            model,
-            resolution,
-            audio,
-            negativePrompt: negativePrompt || undefined,
-            enhancePrompt,
+          console.log(`Scene ${scene.sceneNumber} current state:`, {
+            videoUrl: scene.videoUrl,
+            isApproved: scene.isApproved,
+            sceneNumber: scene.sceneNumber
           })
+          
+          // Use character consistency if reference image is available
+          const generateOptions: any = {
+            aspectRatio: resolution === '1080p' ? '16:9' : '9:16',
+            enableFallback: false,
+            enableTranslation: true,
+            watermark: 'NovaMexi',
+          }
+
+          // Character reference image is mandatory
+          const imageUrl = story?.characterReferenceImage || characterReferenceImage
+          if (!imageUrl) {
+            console.error(`Scene ${scene.sceneNumber} - No character reference image available`)
+            toast({
+              title: 'Error',
+              description: 'Character reference image is required for video generation',
+              status: 'error',
+              duration: 3000,
+              isClosable: true,
+            })
+            return null
+          }
+
+          generateOptions.imageUrls = [imageUrl]
+          console.log(`Scene ${scene.sceneNumber} - Using character reference image for consistency:`, imageUrl)
+
+          const generateResponse = await generateVideo(scene.prompt, generateOptions)
 
           console.log(`Scene ${scene.sceneNumber} generateVideo response:`, generateResponse)
 
@@ -286,22 +396,54 @@ export default function ExplorePage() {
             return null
           }
 
-          console.log(`Scene ${scene.sceneNumber} - Starting to poll for taskId:`, generateResponse.taskId)
+          // Check if the response has the expected structure
+          if (!generateResponse.data || !generateResponse.data.taskId) {
+            console.error(`Scene ${scene.sceneNumber} - Invalid response structure:`, generateResponse)
+            return null
+          }
+
+          console.log(`Scene ${scene.sceneNumber} - Starting to poll for taskId:`, generateResponse.data.taskId)
 
           // Poll for completion
-          const result = await pollStatus(generateResponse.taskId)
+          const result = await pollStatus(generateResponse.data.taskId)
           
           console.log(`Scene ${scene.sceneNumber} pollStatus result:`, result)
           
-          if (result && result.result) {
-            // Update the story scene with the video URL (don't save to gallery yet)
-            console.log(`Updating scene ${scene.sceneNumber} with video URL:`, result.result.videoUrl)
-            updateSceneVideoUrl(scene.sceneNumber, result.result.videoUrl)
-            console.log(`Scene ${scene.sceneNumber} update function called`)
+          if (result && result.data.successFlag === 1) {
+            console.log(`Scene ${scene.sceneNumber} - Video generation completed successfully`)
+            console.log('Full result structure:', JSON.stringify(result, null, 2))
             
-            // Don't save individual frames to gallery - only the combined video will be saved
-
-            return result.result
+            // Get video URL from the correct response structure
+            const videoUrl = result.data.response?.resultUrls?.[0] || 
+                           result.data.response?.originUrls?.[0]
+            
+            console.log(`Scene ${scene.sceneNumber} - Video URL found:`, videoUrl)
+            console.log(`Scene ${scene.sceneNumber} - Watermarked URL:`, result.data.response?.resultUrls?.[0])
+            console.log(`Scene ${scene.sceneNumber} - Original URL:`, result.data.response?.originUrls?.[0])
+            
+            // Log all properties in the response object to help debug
+            console.log(`Scene ${scene.sceneNumber} - All response.data properties:`, Object.keys(result.data))
+            console.log(`Scene ${scene.sceneNumber} - All response.data.response properties:`, result.data.response ? Object.keys(result.data.response) : 'No response object')
+            console.log(`Scene ${scene.sceneNumber} - Full response.data.response:`, result.data.response)
+            
+            if (videoUrl) {
+              // Update the story scene with the video URL (don't save to gallery yet)
+              console.log(`Updating scene ${scene.sceneNumber} with video URL:`, videoUrl)
+              console.log('Before updateSceneVideoUrl - Current story state:', story)
+              updateSceneVideoUrl(scene.sceneNumber, videoUrl)
+              console.log(`Scene ${scene.sceneNumber} update function called`)
+              console.log('After updateSceneVideoUrl - Updated story state:', story)
+              
+              // Don't save individual frames to gallery - only the combined video will be saved
+              return { videoUrl, duration: 8, resolution: '720p', hasAudio: false }
+            } else {
+              console.log(`Scene ${scene.sceneNumber} - Video generation complete but no video URL found in any expected location`)
+              console.log('Full response structure:', result)
+            }
+          } else {
+            console.log(`Scene ${scene.sceneNumber} - Video generation not complete yet or failed`)
+            console.log('Success flag:', result?.data?.successFlag)
+            console.log('Complete time:', result?.data?.completeTime)
           }
         } catch (err) {
           console.error(`Error generating video for scene ${scene.sceneNumber}:`, err)
@@ -323,16 +465,25 @@ export default function ExplorePage() {
         })
 
         // Set the first video as the current generated video for display
-        if (successfulVideos[0]) {
+        if (successfulVideos[0] && successfulVideos[0].videoUrl) {
+          console.log('Setting generated video with:', successfulVideos[0])
           setGeneratedVideo({
             videoUrl: successfulVideos[0].videoUrl,
-            duration: successfulVideos[0].duration,
-            resolution: successfulVideos[0].resolution,
-            hasAudio: successfulVideos[0].hasAudio,
+            duration: successfulVideos[0].duration || 0,
+            resolution: successfulVideos[0].resolution || '720p',
+            hasAudio: successfulVideos[0].hasAudio || false,
             isPreview: false,
             frameCount: 1,
           })
         }
+        
+        // Debug: Check the current story state after all videos are processed
+        console.log('Final story state after video generation:', story)
+        console.log('Scenes with video URLs:', story.scenes.map(scene => ({
+          sceneNumber: scene.sceneNumber,
+          videoUrl: scene.videoUrl,
+          isApproved: scene.isApproved
+        })))
       } else {
         toast({
           title: 'Story Video Generation Failed',
@@ -357,7 +508,10 @@ export default function ExplorePage() {
   // Open video regeneration modal for a specific scene
   const handleOpenVideoRegeneration = (scene: StoryScene) => {
     setSelectedScene(scene)
-    setEditingPrompt(scene.prompt)
+    
+    // Convert character-specific prompts to generic ones for regeneration
+    const genericPrompt = convertToGenericPrompt(scene.prompt)
+    setEditingPrompt(genericPrompt)
     onOpen()
   }
 
@@ -368,17 +522,41 @@ export default function ExplorePage() {
     setIsRegeneratingVideo(true)
     try {
       // Generate new video for this scene
-      const result = await generateVideo(editingPrompt, {
-        model,
-        resolution,
-        audio,
-        negativePrompt: negativePrompt || undefined,
-        enhancePrompt,
-      })
+      // Use character consistency if reference image is available
+      const generateOptions: any = {
+        aspectRatio: resolution === '1080p' ? '16:9' : '9:16',
+        enableFallback: false,
+        enableTranslation: true,
+        watermark: 'NovaMexi',
+      }
 
-      if (result?.taskId) {
-        const videoResult = await pollStatus(result.taskId)
-        if (videoResult?.result?.videoUrl) {
+      // Character reference image is mandatory
+      const imageUrl = story?.characterReferenceImage || characterReferenceImage
+      if (!imageUrl) {
+        console.error(`Regenerating scene ${selectedScene.sceneNumber} - No character reference image available`)
+        toast({
+          title: 'Error',
+          description: 'Character reference image is required for video generation',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        })
+        return
+      }
+
+      generateOptions.imageUrls = [imageUrl]
+      console.log(`Regenerating scene ${selectedScene.sceneNumber} - Using character reference image for consistency:`, imageUrl)
+
+      const result = await generateVideo(editingPrompt, generateOptions)
+
+      if (result?.data?.taskId) {
+        const videoResult = await pollStatus(result.data.taskId)
+        const videoUrl = videoResult?.data?.response?.resultUrls?.[0] || 
+                        videoResult?.data?.response?.originUrls?.[0]
+        if (videoResult?.data?.successFlag === 1 && videoUrl) {
+          // Update the scene with the new video URL
+          updateSceneVideoUrl(selectedScene.sceneNumber, videoUrl)
+          
           toast({
             title: 'Video Regenerated!',
             description: `Frame ${selectedScene.sceneNumber} video has been regenerated successfully.`,
@@ -744,6 +922,99 @@ export default function ExplorePage() {
                   </Text>
                 </Box>
 
+                {/* Character Reference Image URL */}
+                <Box>
+                  <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.600">
+                    Character Reference Image URL <Text as="span" color="red.500">*</Text>
+                  </Text>
+                  <VStack spacing={3} align="stretch">
+                    <Box>
+                      <Text fontSize="xs" color="gray.500" mb={2}>
+                        Provide a live URL to a reference image to maintain character consistency across all video frames
+                      </Text>
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/character-image.jpg"
+                        value={characterReferenceImage || ''}
+                        onChange={(e) => {
+                          const url = e.target.value
+                          setCharacterReferenceImageState(url)
+                          if (story) {
+                            setCharacterReferenceImage(url)
+                          }
+                        }}
+                        size="md"
+                        variant="outline"
+                        _hover={{ borderColor: 'blue.300' }}
+                        _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px blue.500' }}
+                        isRequired
+                      />
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        Example: https://example.com/character-image.jpg
+                      </Text>
+                    </Box>
+                    
+                    {characterReferenceImage && (
+                      <Box p={3} bg="green.50" borderRadius="md" border="1px" borderColor="green.200">
+                        <HStack justify="space-between" align="center">
+                          <HStack spacing={3}>
+                            <Box
+                              w="60px"
+                              h="60px"
+                              borderRadius="md"
+                              overflow="hidden"
+                              border="2px"
+                              borderColor="green.300"
+                              bg="gray.100"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                            >
+                              <img
+                                src={characterReferenceImage}
+                                alt="Character reference"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                onError={(e) => {
+                                  // Show placeholder if image fails to load
+                                  e.currentTarget.style.display = 'none'
+                                  const parent = e.currentTarget.parentElement
+                                  if (parent) {
+                                    parent.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #f0f0f0; color: #666; font-size: 12px;">Image</div>'
+                                  }
+                                }}
+                              />
+                            </Box>
+                            <VStack align="start" spacing={1}>
+                              <Text fontSize="sm" fontWeight="medium" color="green.800">
+                                Character Reference URL Set
+                              </Text>
+                              <Text fontSize="xs" color="green.600">
+                                Character consistency will be maintained across all frames
+                              </Text>
+                              <Text fontSize="xs" color="gray.500" fontFamily="mono" wordBreak="break-all">
+                                {characterReferenceImage}
+                              </Text>
+                            </VStack>
+                          </HStack>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => {
+                              setCharacterReferenceImageState('')
+                              if (story) {
+                                clearCharacterReferenceImage()
+                              }
+                            }}
+                          >
+                            Clear
+                          </Button>
+                        </HStack>
+                      </Box>
+                    )}
+                  </VStack>
+                </Box>
+
                 {/* Story Generation Buttons */}
                 <Stack 
                   spacing={3} 
@@ -757,7 +1028,7 @@ export default function ExplorePage() {
                     loadingText="Generating Story..."
                     onClick={handleGenerateStory}
                     leftIcon={<Icon as={LuBookOpen} />}
-                    isDisabled={!storyTitle.trim()}
+                    isDisabled={!storyTitle.trim() || !characterReferenceImage?.trim()}
                     _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
                     _active={{ transform: 'translateY(0)' }}
                     transition="all 0.2s"
@@ -783,6 +1054,20 @@ export default function ExplorePage() {
                         w={{ base: "full", md: "auto" }}
                       >
                         Regenerate Story
+                      </Button>
+                      <Button
+                        colorScheme="purple"
+                        size={{ base: "lg", md: "md" }}
+                        onClick={convertStoryToGeneric}
+                        leftIcon={<Icon as={LuWand} />}
+                        variant="outline"
+                        _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                        _active={{ transform: 'translateY(0)' }}
+                        transition="all 0.2s"
+                        cursor="pointer"
+                        w={{ base: "full", md: "auto" }}
+                      >
+                        Convert to Generic
                       </Button>
                       <Button
                         colorScheme="gray"
@@ -1021,11 +1306,10 @@ export default function ExplorePage() {
                       <FormLabel fontSize="sm">Model</FormLabel>
                       <Select
                         value={model}
-                        onChange={(e) => setModel(e.target.value as 'veo3-fast' | 'veo3-quality')}
+                        onChange={(e) => setModel(e.target.value as 'veo3')}
                         size="md"
                       >
-                        <option value="veo3-fast">Fast (Good Quality)</option>
-                        <option value="veo3-quality">Quality (Higher Quality)</option>
+                        <option value="veo3">VEO3 (High Quality)</option>
                       </Select>
                     </FormControl>
 
@@ -1115,7 +1399,7 @@ export default function ExplorePage() {
                       w={{ base: "full", md: "auto" }}
                     >
                       Create Combined Video
-                    </Button>
+                  </Button>
                   </Stack>
                 </Box>
 
@@ -1146,7 +1430,7 @@ export default function ExplorePage() {
                     <Text mt={2} fontSize="sm" color="gray.500" textAlign="center">
                       {progressText}
                     </Text>
-                  </Box>
+                </Box>
                 )}
               </Stack>
             </Card>
