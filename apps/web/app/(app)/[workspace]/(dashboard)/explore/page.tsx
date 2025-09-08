@@ -426,14 +426,14 @@ export default function ExplorePage() {
             console.log(`Scene ${scene.sceneNumber} - Full response.data.response:`, result.data.response)
             
             if (videoUrl) {
-              // Update the story scene with the video URL (don't save to gallery yet)
+            // Update the story scene with the video URL (don't save to gallery yet)
               console.log(`Updating scene ${scene.sceneNumber} with video URL:`, videoUrl)
               console.log('Before updateSceneVideoUrl - Current story state:', story)
               updateSceneVideoUrl(scene.sceneNumber, videoUrl)
-              console.log(`Scene ${scene.sceneNumber} update function called`)
+            console.log(`Scene ${scene.sceneNumber} update function called`)
               console.log('After updateSceneVideoUrl - Updated story state:', story)
-              
-              // Don't save individual frames to gallery - only the combined video will be saved
+            
+            // Don't save individual frames to gallery - only the combined video will be saved
               return { videoUrl, duration: 8, resolution: '720p', hasAudio: false }
             } else {
               console.log(`Scene ${scene.sceneNumber} - Video generation complete but no video URL found in any expected location`)

@@ -47,10 +47,10 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer and save
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
+    await writeFile(filePath, buffer as any)
 
     // Return the public URL
-    const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/uploads/character-refs/${fileName}`
+    const publicUrl = `/uploads/character-refs/${fileName}`
 
     return NextResponse.json({
       success: true,
