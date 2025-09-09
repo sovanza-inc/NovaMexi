@@ -120,7 +120,7 @@ export function useStoryGenerator() {
     // Extract dialogues from the prompt
     const dialogues = extractDialogue(prompt)
     
-    // Clean the prompt for visual description
+    // Clean the prompt for visual description and make it action-oriented
     let visualPrompt = prompt
       // Remove audio references
       .replace(/Audio:.*$/gm, '')
@@ -142,11 +142,18 @@ export function useStoryGenerator() {
       .replace(/Subtitles: Off/g, 'Visual storytelling focus')
       .trim()
 
+    // Make the prompt more action-oriented for better video generation
+    if (!visualPrompt.includes('walks') && !visualPrompt.includes('moves') && !visualPrompt.includes('runs') && !visualPrompt.includes('jumps')) {
+      // Add dynamic actions based on story theme and frame
+      const actions = getDynamicActions(theme, frameIndex, totalFrames)
+      visualPrompt = `${actions.opening} ${visualPrompt} ${actions.closing}`
+    }
+
     // Add consistency enhancements
     visualPrompt = addConsistencyEnhancements(visualPrompt)
     
-    // Truncate if too long
-    visualPrompt = truncatePrompt(visualPrompt, 600)
+    // Truncate if too long - reduce to fit 2000 char limit
+    visualPrompt = truncatePrompt(visualPrompt, 300)
 
     // Determine character type and specific details
     const isYeti = theme.includes('yeti') || visualPrompt.toLowerCase().includes('yeti')
@@ -186,39 +193,28 @@ export function useStoryGenerator() {
       }
     }
 
-    // Create JSON structure for better VEO3 API consistency
+    // Create concise JSON structure for VEO3 API
     const jsonPrompt = {
       scene: {
         frame: frameIndex + 1,
         totalFrames: totalFrames,
         type: frameIndex === 0 ? 'opening' : frameIndex === totalFrames - 1 ? 'closing' : 'continuation',
-        theme: theme,
-        continuity: {
-          sameCharacter: true,
-          sameSetting: true,
-          sameStyle: true,
-          referenceImage: true
-        }
+        theme: theme
       },
       visual: {
         description: visualPrompt,
-        camera: cameraDetails,
-        duration: 8,
-        quality: 'cinematic, professional'
+        camera: cameraDetails.angle,
+        duration: 8
       },
       dialogue: dialogues.length > 0 ? {
-        expression: isYeti ? "slightly amused expression as he whispers" : "character looks directly at camera with animated facial expressions",
-        line: dialogues[0] || dialogues.join(' '),
-        lines: dialogues,
-        visualCues: dialogues.map(d => `Character mouth moving in sync with: "${d}"`)
-      } : null,
-      consistency: {
-        characterAppearance: isYeti ? 'fluffy white Yeti with icy blue eyes, same clothing and style' : 'maintain the same character design, clothing, and style throughout all frames',
-        settingContinuity: isYeti ? 'icy cave kitchen with icicles and frozen cooking setup' : 'maintain the same environment and atmosphere across all frames',
-        colorPalette: isYeti ? 'cool icy blues with frosty highlights' : 'consistent color scheme throughout all frames',
-        style: isYeti ? 'cinematic vlog style, professional video quality' : 'cinematic, professional video quality with consistent character appearance'
+        line: dialogues[0] || dialogues.join(' ')
+      } : {
+        line: getDynamicDialogue(theme, frameIndex, totalFrames)
       },
-      technical: technicalDetails
+      consistency: {
+        character: isYeti ? 'fluffy white Yeti with icy blue eyes' : 'same character design throughout',
+        setting: isYeti ? 'icy cave kitchen' : 'same environment across frames'
+      }
     }
 
     // Convert to JSON string for VEO3 API
@@ -242,6 +238,111 @@ export function useStoryGenerator() {
     }
     
     return truncated + '...'
+  }, [])
+
+  // Generate dynamic dialogue based on theme and frame
+  const getDynamicDialogue = useCallback((theme: string, frameIndex: number, totalFrames: number) => {
+    const isAdventure = theme.includes('adventure') || theme.includes('journey') || theme.includes('delivery')
+    const isCooking = theme.includes('cooking') || theme.includes('vlog') || theme.includes('kitchen')
+    const isForest = theme.includes('forest') || theme.includes('jungle') || theme.includes('nature')
+    const isDelivery = theme.includes('delivery') || theme.includes('package') || theme.includes('special')
+    
+    if (frameIndex === 0) {
+      // Opening dialogue
+      if (isAdventure && isDelivery) {
+        return "Alright, let's see what we've got here! This delivery is going to be epic!"
+      } else if (isCooking) {
+        return "Welcome to my kitchen! Today we're making something absolutely delicious!"
+      } else if (isForest) {
+        return "This place is amazing! Look at all these beautiful trees and wildlife!"
+      } else {
+        return "Let's see what this adventure brings! I'm ready for anything!"
+      }
+    } else if (frameIndex === totalFrames - 1) {
+      // Closing dialogue
+      if (isAdventure && isDelivery) {
+        return "Mission accomplished! That was one successful delivery!"
+      } else if (isCooking) {
+        return "That was delicious! Five stars, highly recommend this recipe!"
+      } else if (isForest) {
+        return "What an amazing adventure! This forest is absolutely beautiful!"
+      } else {
+        return "We did it! That was an incredible journey!"
+      }
+    } else {
+      // Middle dialogue
+      if (isAdventure && isDelivery) {
+        return "Keep moving forward! We're making great progress on this delivery!"
+      } else if (isCooking) {
+        return "This is looking amazing! The flavors are coming together perfectly!"
+      } else if (isForest) {
+        return "This forest is incredible! I can't believe how peaceful it is here!"
+      } else {
+        return "Keep moving forward! This adventure is getting better and better!"
+      }
+    }
+  }, [])
+
+  // Generate dynamic actions based on theme and frame
+  const getDynamicActions = useCallback((theme: string, frameIndex: number, totalFrames: number) => {
+    const isAdventure = theme.includes('adventure') || theme.includes('journey') || theme.includes('delivery')
+    const isCooking = theme.includes('cooking') || theme.includes('vlog') || theme.includes('kitchen')
+    const isForest = theme.includes('forest') || theme.includes('jungle') || theme.includes('nature')
+    const isDelivery = theme.includes('delivery') || theme.includes('package') || theme.includes('special')
+    
+    const actions = {
+      opening: '',
+      closing: ''
+    }
+    
+    if (frameIndex === 0) {
+      // Opening frame actions
+      if (isAdventure && isDelivery) {
+        actions.opening = `The protagonist approaches a delivery truck, opens the door, and climbs in while talking: "Alright, let's see what we've got here!" Starts the engine, puts on a seatbelt, and begins driving down the road.`
+        actions.closing = `The protagonist continues driving, occasionally looking at the camera, making hand gestures, and taking sips from a coffee cup while steering.`
+      } else if (isCooking) {
+        actions.opening = `The protagonist walks into the kitchen, puts on an apron, and starts cooking while talking: "Welcome to my kitchen! Today we're making something special." Begins chopping vegetables with a knife and stirring a pot.`
+        actions.closing = `The protagonist continues cooking, tasting the food with a spoon, making comments, and using various kitchen utensils.`
+      } else if (isForest) {
+        actions.opening = `The protagonist walks through the forest, stepping over logs, and looking around curiously while talking: "This place is amazing! Look at all these trees." Touches tree bark and examines leaves.`
+        actions.closing = `The protagonist continues exploring, stopping to examine plants, picking up a leaf, and using hand gestures while walking.`
+      } else {
+        actions.opening = `The protagonist confidently walks forward, looking around with curiosity while talking: "Let's see what this adventure brings!"`
+        actions.closing = `The protagonist continues moving forward, engaging with their environment.`
+      }
+    } else if (frameIndex === totalFrames - 1) {
+      // Closing frame actions
+      if (isAdventure && isDelivery) {
+        actions.opening = `The protagonist parks the delivery truck, gets out, and walks toward the destination while talking: "We made it! Let's deliver this package." Carries a package and approaches the door.`
+        actions.closing = `The protagonist rings the doorbell, hands over the package to a person, and celebrates with a high-five: "Mission accomplished!"`
+      } else if (isCooking) {
+        actions.opening = `The protagonist finishes cooking, plates the food beautifully, and presents it: "And here's our masterpiece!" Takes a bite with a fork and gives a thumbs up.`
+        actions.closing = `The protagonist stands tall and proud, looking at the camera, and says: "That was delicious! Five stars!" while holding the plate.`
+      } else if (isForest) {
+        actions.opening = `The protagonist reaches a clearing, looks around in amazement, and talks: "Wow, this is incredible!" Sits down on a log and takes out a snack.`
+        actions.closing = `The protagonist stands up, stretches, looks at the camera, and says: "What an amazing adventure!" while holding a leaf.`
+      } else {
+        actions.opening = `The protagonist reaches their destination, looks around with satisfaction, and talks: "We did it!"`
+        actions.closing = `The protagonist stands tall and proud, looking at the camera, and raises their arms in celebration.`
+      }
+    } else {
+      // Middle frame actions
+      if (isAdventure && isDelivery) {
+        actions.opening = `The protagonist continues driving the delivery truck, looking at the camera, making hand gestures, and taking sips from a water bottle.`
+        actions.closing = `The protagonist adjusts the radio, changes lanes, and continues the conversation while steering the wheel.`
+      } else if (isCooking) {
+        actions.opening = `The protagonist continues cooking, tasting the food with a spoon, and making comments while stirring a pot.`
+        actions.closing = `The protagonist uses a knife to chop vegetables, tastes ingredients, and maintains animated facial expressions.`
+      } else if (isForest) {
+        actions.opening = `The protagonist continues exploring, stopping to examine plants, picking up a leaf, and using hand gestures while walking.`
+        actions.closing = `The protagonist continues moving through the forest, stepping over rocks and branches.`
+      } else {
+        actions.opening = `The protagonist continues moving forward, engaging with their environment.`
+        actions.closing = `The protagonist uses hand gestures while continuing their journey.`
+      }
+    }
+    
+    return actions
   }, [])
 
   // Add consistency enhancements to prompts (with deduplication)
