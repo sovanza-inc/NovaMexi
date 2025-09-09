@@ -225,9 +225,13 @@ export function useStoryGenerator() {
       enhanced = enhanced.replace(/\bcharacter's\b/g, 'the same character\'s')
       // Replace "character" with "the same character" but avoid double replacements
       enhanced = enhanced.replace(/\bcharacter\b/g, 'the same character')
-      // Clean up any "the the same character" issues
-      enhanced = enhanced.replace(/the the same character/g, 'the same character')
     }
+    
+    // Clean up any duplication issues that may have occurred
+    enhanced = enhanced.replace(/the the same character/g, 'the same character')
+    enhanced = enhanced.replace(/The the same character/g, 'The same character')
+    enhanced = enhanced.replace(/the same the same character/g, 'the same character')
+    enhanced = enhanced.replace(/The same the same character/g, 'The same character')
 
     // Collect enhancements without duplicates
     if (enhanced.includes('snowy mountain') || enhanced.includes('winter')) {
@@ -331,9 +335,13 @@ export function useStoryGenerator() {
       enhanced = enhanced.replace(/\bcharacter's\b/g, 'the same character\'s')
       // Replace "character" with "the same character" but avoid double replacements
       enhanced = enhanced.replace(/\bcharacter\b/g, 'the same character')
-      // Clean up any "the the same character" issues
-      enhanced = enhanced.replace(/the the same character/g, 'the same character')
     }
+    
+    // Clean up any duplication issues that may have occurred
+    enhanced = enhanced.replace(/the the same character/g, 'the same character')
+    enhanced = enhanced.replace(/The the same character/g, 'The same character')
+    enhanced = enhanced.replace(/the same the same character/g, 'the same character')
+    enhanced = enhanced.replace(/The same the same character/g, 'The same character')
     
     // Add continuity markers
     if (frameIndex === 0) {
