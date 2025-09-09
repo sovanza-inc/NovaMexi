@@ -219,7 +219,14 @@ export function useStoryGenerator() {
 
     // Ensure character consistency - fix "same character" issue
     if (enhanced.includes('character') && !enhanced.includes('the same character')) {
-      enhanced = enhanced.replace(/character/g, 'the same character')
+      // Replace "A character" with "The same character"
+      enhanced = enhanced.replace(/A character/g, 'The same character')
+      // Replace "character's" with "the same character's" (possessive)
+      enhanced = enhanced.replace(/\bcharacter's\b/g, 'the same character\'s')
+      // Replace "character" with "the same character" but avoid double replacements
+      enhanced = enhanced.replace(/\bcharacter\b/g, 'the same character')
+      // Clean up any "the the same character" issues
+      enhanced = enhanced.replace(/the the same character/g, 'the same character')
     }
 
     // Collect enhancements without duplicates
@@ -318,7 +325,14 @@ export function useStoryGenerator() {
 
     // CRITICAL: Always ensure same character and setting - fix "same character" issue
     if (!enhanced.includes('the same character')) {
-      enhanced = enhanced.replace(/character/g, 'the same character')
+      // Replace "A character" with "The same character"
+      enhanced = enhanced.replace(/A character/g, 'The same character')
+      // Replace "character's" with "the same character's" (possessive)
+      enhanced = enhanced.replace(/\bcharacter's\b/g, 'the same character\'s')
+      // Replace "character" with "the same character" but avoid double replacements
+      enhanced = enhanced.replace(/\bcharacter\b/g, 'the same character')
+      // Clean up any "the the same character" issues
+      enhanced = enhanced.replace(/the the same character/g, 'the same character')
     }
     
     // Add continuity markers
