@@ -169,14 +169,23 @@ export function useStoryGenerator() {
         quality: 'cinematic, professional'
       },
       dialogue: dialogues.length > 0 ? {
+        expression: "character looks directly at camera with animated facial expressions",
         lines: dialogues,
         visualCues: dialogues.map(d => `Character mouth moving in sync with: "${d}"`)
       } : null,
       consistency: {
-        characterAppearance: 'maintain same character design, clothing, and style',
-        settingContinuity: 'maintain same environment and atmosphere',
-        colorPalette: 'consistent color scheme throughout',
-        style: 'cinematic, professional video quality'
+        characterAppearance: 'maintain the same character design, clothing, and style throughout all frames',
+        settingContinuity: 'maintain the same environment and atmosphere across all frames',
+        colorPalette: 'consistent color scheme throughout all frames',
+        style: 'cinematic, professional video quality with consistent character appearance'
+      },
+      technical: {
+        timeOfDay: 'consistent lighting and time of day across all frames',
+        lens: 'maintain consistent camera lens and focal length',
+        filmStock: 'consistent cinematic grading and color treatment',
+        audio: 'ambient sound consistent with setting and character',
+        background: 'maintain same background elements and environment',
+        subtitles: 'Off'
       }
     }
 
@@ -208,9 +217,9 @@ export function useStoryGenerator() {
     let enhanced = prompt
     const enhancements = new Set<string>()
 
-    // Ensure character consistency
-    if (enhanced.includes('character') && !enhanced.includes('same character')) {
-      enhanced = enhanced.replace(/character/g, 'same character')
+    // Ensure character consistency - fix "same character" issue
+    if (enhanced.includes('character') && !enhanced.includes('the same character')) {
+      enhanced = enhanced.replace(/character/g, 'the same character')
     }
 
     // Collect enhancements without duplicates
@@ -307,22 +316,22 @@ export function useStoryGenerator() {
   const addFrameConsistency = useCallback((prompt: string, frameIndex: number, totalFrames: number): string => {
     let enhanced = prompt
 
-    // CRITICAL: Always ensure same character and setting
-    if (!enhanced.includes('same character')) {
-      enhanced = enhanced.replace(/character/g, 'same character')
+    // CRITICAL: Always ensure same character and setting - fix "same character" issue
+    if (!enhanced.includes('the same character')) {
+      enhanced = enhanced.replace(/character/g, 'the same character')
     }
     
     // Add continuity markers
     if (frameIndex === 0) {
-      enhanced += ' - same character, same setting, story beginning'
+      enhanced += ' - the same character, same setting, story beginning'
     } else if (frameIndex === totalFrames - 1) {
-      enhanced += ' - same character, same setting, story ending'
+      enhanced += ' - the same character, same setting, story ending'
     } else {
-      enhanced += ' - same character, same setting, story continuation'
+      enhanced += ' - the same character, same setting, story continuation'
     }
 
     // Add character reference consistency
-    enhanced += ' - use character reference image for consistency, same character appearance, same clothing, same style'
+    enhanced += ' - use character reference image for consistency, the same character appearance, same clothing, same style'
 
     return enhanced
   }, [])
@@ -366,6 +375,10 @@ export function useStoryGenerator() {
         story: "A character starts their day in a cozy mountain cabin, looking directly at the camera with an enthusiastic expression. The character says: 'Good morning everyone! Welcome to my daily vlog!' They gesture around their space, showing various items and activities. The character continues: 'Today I'm going to show you what I cook in a day!' They move to the kitchen area, pointing at ingredients and utensils. The character explains: 'First, let's start with breakfast - I'm making my famous mountain pancakes!' They demonstrate cooking techniques with animated movements. The character concludes: 'That's it for today's cooking adventure! Don't forget to like and subscribe!'",
         theme: "vlogging, cooking, mountain life, daily routine"
       },
+      'yeti_vlogger': {
+        story: "A fluffy white Yeti with icy blue eyes starts their day in a frosty mountain cave kitchen, holding the camera like a vlogger with a goofy, warm personality. The Yeti says: 'Alright guys, welcome to my kitchen… today I'm cooking up my favorite breakfast — Snow Flakes with extra cold milk!' The Yeti dramatically stirs a giant icy pot filled with pinecones, frozen salmon, and icicles, sprinkling snow as if it were seasoning. The Yeti says: 'Mmm… nothing like my famous gourmet Pinecone Soup… crunchy and, uh… kinda painful.' The Yeti takes a big spoonful, makes a disgusted face, then shrugs and keeps eating anyway. The Yeti concludes: 'That's it for today's cooking adventure! Don't forget to like and subscribe!'",
+        theme: "funny, relatable, winter cooking vlog parody, yeti character, mountain life"
+      },
       'horror': {
         story: "A character cautiously explores a dark, abandoned mansion, their flashlight casting eerie shadows on the walls. The character whispers: 'Is anyone there?' as they step through creaking floorboards. Suddenly, a door slams shut behind them, and they jump in fright. The character says: 'This place gives me the creeps!' as they continue deeper into the house. Mysterious sounds echo through the halls - footsteps, whispers, and the sound of something moving in the darkness. The character's heart races as they discover a hidden room filled with old photographs and strange symbols. The character gasps: 'What happened here?' as they realize they're not alone in the house.",
         theme: "horror, mystery, suspense, supernatural"
@@ -398,7 +411,9 @@ export function useStoryGenerator() {
       selectedStory = storyTemplates['gentleman']
     } else if (titleLower.includes('bunny') || titleLower.includes('guitar') || titleLower.includes('music') || titleLower.includes('concert') || titleLower.includes('performance')) {
       selectedStory = storyTemplates['bunny']
-    } else if (titleLower.includes('vlog') || titleLower.includes('cooking') || titleLower.includes('yeti') || titleLower.includes('daily') || titleLower.includes('lifestyle')) {
+    } else if (titleLower.includes('yeti') || titleLower.includes('vlog') && titleLower.includes('cooking')) {
+      selectedStory = storyTemplates['yeti_vlogger']
+    } else if (titleLower.includes('vlog') || titleLower.includes('cooking') || titleLower.includes('daily') || titleLower.includes('lifestyle')) {
       selectedStory = storyTemplates['vlogger']
     } else if (titleLower.includes('horror') || titleLower.includes('scary') || titleLower.includes('ghost') || titleLower.includes('haunted') || titleLower.includes('mystery')) {
       selectedStory = storyTemplates['horror']

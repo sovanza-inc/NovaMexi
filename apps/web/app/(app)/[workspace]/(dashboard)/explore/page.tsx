@@ -954,7 +954,7 @@ export default function ExplorePage() {
                     </Box>
                     
                     {characterReferenceImage && (
-                      <Box p={3} bg="green.50" borderRadius="md" border="1px" borderColor="green.200">
+                      <Box p={3} bg="green.900" borderRadius="md" border="1px" borderColor="green.600">
                         <HStack justify="space-between" align="center">
                           <HStack spacing={3}>
                             <Box
@@ -963,8 +963,8 @@ export default function ExplorePage() {
                               borderRadius="md"
                               overflow="hidden"
                               border="2px"
-                              borderColor="green.300"
-                              bg="gray.100"
+                              borderColor="green.400"
+                              bg="gray.800"
                               display="flex"
                               alignItems="center"
                               justifyContent="center"
@@ -978,19 +978,19 @@ export default function ExplorePage() {
                                   e.currentTarget.style.display = 'none'
                                   const parent = e.currentTarget.parentElement
                                   if (parent) {
-                                    parent.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #f0f0f0; color: #666; font-size: 12px;">Image</div>'
+                                    parent.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #2d3748; color: #a0aec0; font-size: 12px;">Image</div>'
                                   }
                                 }}
                               />
                             </Box>
                             <VStack align="start" spacing={1}>
-                              <Text fontSize="sm" fontWeight="medium" color="green.800">
+                              <Text fontSize="sm" fontWeight="medium" color="green.200">
                                 Character Reference URL Set
                               </Text>
-                              <Text fontSize="xs" color="green.600">
+                              <Text fontSize="xs" color="green.300">
                                 Character consistency will be maintained across all frames
                               </Text>
-                              <Text fontSize="xs" color="gray.500" fontFamily="mono" wordBreak="break-all">
+                              <Text fontSize="xs" color="gray.400" fontFamily="mono" wordBreak="break-all">
                                 {characterReferenceImage}
                               </Text>
                             </VStack>
@@ -1088,41 +1088,6 @@ export default function ExplorePage() {
                 {/* Generated Story Display */}
                 {story && (
                   <Box>
-                    {/* Debug Info */}
-                    <Box mb={3} p={2} bg="yellow.50" borderRadius="md" border="1px" borderColor="yellow.200">
-                      <Text fontSize="xs" color="yellow.800">
-                        Debug: Story has {story.scenes?.length || 0} scenes, Title: {story.title}, Duration: {story.totalDuration}s
-                      </Text>
-                      <Stack 
-                        mt={2} 
-                        spacing={2}
-                        direction={{ base: 'column', md: 'row' }}
-                        align={{ base: 'stretch', md: 'center' }}
-                      >
-                        <Button 
-                          size={{ base: "sm", md: "xs" }}
-                          onClick={() => console.log('Full story object:', story)}
-                          _hover={{ transform: 'translateY(-1px)', boxShadow: 'md' }}
-                          _active={{ transform: 'translateY(0)' }}
-                          transition="all 0.2s"
-                          cursor="pointer"
-                          w={{ base: "full", md: "auto" }}
-                        >
-                          Log Story
-                        </Button>
-                        <Button 
-                          size={{ base: "sm", md: "xs" }}
-                          onClick={() => console.log('Scenes array:', story.scenes)}
-                          _hover={{ transform: 'translateY(-1px)', boxShadow: 'md' }}
-                          _active={{ transform: 'translateY(0)' }}
-                          transition="all 0.2s"
-                          cursor="pointer"
-                          w={{ base: "full", md: "auto" }}
-                        >
-                          Log Scenes
-                        </Button>
-                      </Stack>
-                    </Box>
                     
                     <HStack justify="space-between" mb={3}>
                       <Text fontWeight="medium" fontSize="sm" color="gray.600">
@@ -1165,21 +1130,13 @@ export default function ExplorePage() {
                             </Text>
                           </Box> */}
                           
-                          {/* Frame Counter */}
-                          <Box p={2} bg="gray.800" borderRadius="md" border="1px" borderColor="gray.600" mb={2} gridColumn="1 / -1">
-                            <Text fontSize="sm" color="white" textAlign="center" fontWeight="bold">
-                              🎬 DISPLAYING {story.scenes.length} FRAMES - Grid Layout: {story.scenes.length <= 2 ? '1 row' : Math.ceil(story.scenes.length / 2) + ' rows'}
-                            </Text>
-                          </Box>
-                          {story.scenes.map((scene, index) => {
-                            console.log(`Rendering scene ${index + 1}/${story.scenes.length}:`, scene)
-                        return (
+                          {story.scenes.map((scene, index) => (
                           <Card
                             key={scene.sceneNumber}
                             p={3}
-                            bg={scene.isApproved ? "green.50" : "purple.50"}
+                            bg={scene.isApproved ? "green.900" : "purple.900"}
                             border="1px solid"
-                            borderColor={scene.isApproved ? "green.400" : "purple.200"}
+                            borderColor={scene.isApproved ? "green.600" : "purple.600"}
                             position="relative"
                                 borderWidth="3px"
                                 _before={{
@@ -1193,7 +1150,8 @@ export default function ExplorePage() {
                                   py: 1,
                                   borderRadius: "md",
                                   fontSize: "xs",
-                                  fontWeight: "bold"
+                                  fontWeight: "bold",
+                                  zIndex: 1
                                 }}
                           >
                             {/* Scene Status Badge */}
@@ -1212,11 +1170,11 @@ export default function ExplorePage() {
                                 </Badge>
                               </HStack>
                               
-                              <Text fontSize="sm" fontWeight="medium">
+                              <Text fontSize="sm" fontWeight="medium" color="white">
                                 {scene.description}
                               </Text>
                               
-                              <Text fontSize="xs" color="gray.600" noOfLines={2}>
+                              <Text fontSize="xs" color="gray.300" noOfLines={2}>
                                 {scene.prompt}
                               </Text>
 
@@ -1281,8 +1239,7 @@ export default function ExplorePage() {
                               </HStack>
                             </VStack>
                           </Card>
-                        )
-                      })}
+                          ))}
                         </>
                       ) : (
                         <Box p={4} textAlign="center" color="gray.500">
@@ -1490,9 +1447,9 @@ export default function ExplorePage() {
                         <Card
                           key={`video-${scene.sceneNumber}`}
                           p={3}
-                          bg="blue.50"
+                          bg="blue.900"
                           border="1px solid"
-                          borderColor="blue.200"
+                          borderColor="blue.600"
                           position="relative"
                           borderWidth="3px"
                           _before={{
