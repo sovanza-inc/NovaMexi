@@ -166,12 +166,30 @@ export function useStoryGenerator() {
       lighting: 'consistent cinematic lighting'
     }
     
+    let technicalDetails = {
+      timeOfDay: 'consistent lighting and time of day across all frames',
+      lens: 'maintain consistent camera lens and focal length',
+      filmStock: 'consistent cinematic grading and color treatment',
+      audio: 'ambient sound consistent with setting and character',
+      background: 'maintain same background elements and environment',
+      subtitles: 'Off'
+    }
+    
     // Customize for Yeti vlog style
     if (isYeti && isVlog) {
       cameraDetails = {
         angle: frameIndex === 0 ? 'selfie-style handheld vlog' : 'slightly low tripod-like angle, vlog continuation shot',
         movement: frameIndex === totalFrames - 1 ? 'dramatic close-up' : 'slightly shaky handheld, natural vlog movement',
         lighting: 'cinematic cool blue with frosty highlights on steam and icicles'
+      }
+      
+      technicalDetails = {
+        timeOfDay: frameIndex === 0 ? 'early morning, pale mountain light streaming in' : 'early morning continuing, steady pale light through cave opening',
+        lens: frameIndex === 0 ? 'ultra-wide selfie lens, shallow depth of field' : 'wide lens capturing Yeti and cooking pot in frame',
+        filmStock: 'crisp digital cinematic vlog style, cool-toned grading',
+        audio: frameIndex === 0 ? 'ambient cave echoes, sizzling ice in pan, faint crunching snow underfoot' : 'faint bubbling crackle from icy pot, exaggerated crunching sound as he eats',
+        background: 'icy cave kitchen with icicle utensils, frozen salmon, and snow piles visible',
+        subtitles: 'Off'
       }
     }
 
@@ -280,14 +298,14 @@ export function useStoryGenerator() {
     if (frameIndex === 0) {
       // Opening frame actions
       if (isAdventure && isDelivery) {
-        actions.opening = `The protagonist approaches a delivery truck, opens the door, and climbs in while talking: "Alright, let's see what we've got here!" Starts the engine, puts on a seatbelt, and begins driving down the road.`
-        actions.closing = `The protagonist continues driving, occasionally looking at the camera, making hand gestures, and taking sips from a coffee cup while steering.`
+        actions.opening = `The protagonist approaches a delivery vehicle, opens the door, and climbs in while talking: "Alright, let's see what we've got here!" Starts the engine and begins driving.`
+        actions.closing = `The protagonist continues driving, looking at the camera, making hand gestures.`
       } else if (isCooking) {
-        actions.opening = `The protagonist walks into the kitchen, puts on an apron, and starts cooking while talking: "Welcome to my kitchen! Today we're making something special." Begins chopping vegetables with a knife and stirring a pot.`
-        actions.closing = `The protagonist continues cooking, tasting the food with a spoon, making comments, and using various kitchen utensils.`
+        actions.opening = `The protagonist walks into the kitchen, puts on an apron, and starts cooking while talking: "Welcome to my kitchen! Today we're making something special."`
+        actions.closing = `The protagonist continues cooking, tasting the food, and making comments.`
       } else if (isForest) {
-        actions.opening = `The protagonist walks through the forest, stepping over logs, and looking around curiously while talking: "This place is amazing! Look at all these trees." Touches tree bark and examines leaves.`
-        actions.closing = `The protagonist continues exploring, stopping to examine plants, picking up a leaf, and using hand gestures while walking.`
+        actions.opening = `The protagonist walks through the forest, stepping over logs, and looking around curiously while talking: "This place is amazing! Look at all these trees."`
+        actions.closing = `The protagonist continues exploring, stopping to examine plants, and using hand gestures.`
       } else {
         actions.opening = `The protagonist confidently walks forward, looking around with curiosity while talking: "Let's see what this adventure brings!"`
         actions.closing = `The protagonist continues moving forward, engaging with their environment.`
@@ -295,14 +313,14 @@ export function useStoryGenerator() {
     } else if (frameIndex === totalFrames - 1) {
       // Closing frame actions
       if (isAdventure && isDelivery) {
-        actions.opening = `The protagonist parks the delivery truck, gets out, and walks toward the destination while talking: "We made it! Let's deliver this package." Carries a package and approaches the door.`
-        actions.closing = `The protagonist rings the doorbell, hands over the package to a person, and celebrates with a high-five: "Mission accomplished!"`
+        actions.opening = `The protagonist parks the vehicle, gets out, and walks toward the destination while talking: "We made it! Let's deliver this package."`
+        actions.closing = `The protagonist rings the doorbell, hands over the package, and celebrates: "Mission accomplished!"`
       } else if (isCooking) {
-        actions.opening = `The protagonist finishes cooking, plates the food beautifully, and presents it: "And here's our masterpiece!" Takes a bite with a fork and gives a thumbs up.`
-        actions.closing = `The protagonist stands tall and proud, looking at the camera, and says: "That was delicious! Five stars!" while holding the plate.`
+        actions.opening = `The protagonist finishes cooking, plates the food, and presents it: "And here's our masterpiece!"`
+        actions.closing = `The protagonist stands tall and proud, looking at the camera, and says: "That was delicious! Five stars!"`
       } else if (isForest) {
-        actions.opening = `The protagonist reaches a clearing, looks around in amazement, and talks: "Wow, this is incredible!" Sits down on a log and takes out a snack.`
-        actions.closing = `The protagonist stands up, stretches, looks at the camera, and says: "What an amazing adventure!" while holding a leaf.`
+        actions.opening = `The protagonist reaches a clearing, looks around in amazement, and talks: "Wow, this is incredible!"`
+        actions.closing = `The protagonist stands up, stretches, looks at the camera, and says: "What an amazing adventure!"`
       } else {
         actions.opening = `The protagonist reaches their destination, looks around with satisfaction, and talks: "We did it!"`
         actions.closing = `The protagonist stands tall and proud, looking at the camera, and raises their arms in celebration.`
@@ -310,14 +328,14 @@ export function useStoryGenerator() {
     } else {
       // Middle frame actions
       if (isAdventure && isDelivery) {
-        actions.opening = `The protagonist continues driving the delivery truck, looking at the camera, making hand gestures, and taking sips from a water bottle.`
-        actions.closing = `The protagonist adjusts the radio, changes lanes, and continues the conversation while steering the wheel.`
+        actions.opening = `The protagonist continues driving, looking at the camera, making hand gestures.`
+        actions.closing = `The protagonist adjusts the radio and continues the conversation while driving.`
       } else if (isCooking) {
-        actions.opening = `The protagonist continues cooking, tasting the food with a spoon, and making comments while stirring a pot.`
-        actions.closing = `The protagonist uses a knife to chop vegetables, tastes ingredients, and maintains animated facial expressions.`
+        actions.opening = `The protagonist continues cooking, tasting the food, and making comments.`
+        actions.closing = `The protagonist uses kitchen tools and maintains animated facial expressions.`
       } else if (isForest) {
-        actions.opening = `The protagonist continues exploring, stopping to examine plants, picking up a leaf, and using hand gestures while walking.`
-        actions.closing = `The protagonist continues moving through the forest, stepping over rocks and branches.`
+        actions.opening = `The protagonist continues exploring, stopping to examine plants, and using hand gestures.`
+        actions.closing = `The protagonist continues moving through the forest.`
       } else {
         actions.opening = `The protagonist continues moving forward, engaging with their environment.`
         actions.closing = `The protagonist uses hand gestures while continuing their journey.`
