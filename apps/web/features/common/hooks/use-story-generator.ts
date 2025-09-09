@@ -127,16 +127,15 @@ export function useStoryGenerator() {
       
       // Generate speech using free Google TTS
       const fullText = dialogue.join(' ')
-      let audioBuffer: ArrayBuffer | Blob
       
       try {
         // Try Google TTS first (completely free)
-        audioBuffer = await freeTTS.generateSpeechGoogle(fullText)
+        await freeTTS.generateSpeechGoogle(fullText)
         console.log('✅ Using Google TTS (Free)')
-      } catch (googleError) {
+      } catch {
         console.log('Google TTS failed, trying browser TTS...')
         // Fallback to browser TTS
-        audioBuffer = await browserTTS.generateSpeech(fullText)
+        await browserTTS.generateSpeech(fullText)
         console.log('✅ Using Browser TTS (Free)')
       }
       
@@ -318,7 +317,6 @@ export function useStoryGenerator() {
 
     while (i < story.length) {
       const char = story[i]
-      const nextChar = story[i + 1]
 
       if (char === '"') {
         insideQuotes = !insideQuotes
@@ -345,7 +343,7 @@ export function useStoryGenerator() {
   }, [])
 
   // Ensure CONTINUITY between frames - same story, same character, same setting
-  const addFrameConsistency = useCallback((prompt: string, frameIndex: number, totalFrames: number, theme: string): string => {
+  const addFrameConsistency = useCallback((prompt: string, frameIndex: number, totalFrames: number): string => {
     let enhanced = prompt
 
     // CRITICAL: Always ensure same character and setting
@@ -541,7 +539,7 @@ export function useStoryGenerator() {
         }
 
         // Add frame-specific consistency enhancements
-        framePrompt = addFrameConsistency(framePrompt, i, frameCount, theme)
+        framePrompt = addFrameConsistency(framePrompt, i, frameCount)
         
         // Get dialogues for this frame using range-based distribution
         const frameDialogues = distributeDialoguesByRange(allDialogues, i, frameCount, storyParts)

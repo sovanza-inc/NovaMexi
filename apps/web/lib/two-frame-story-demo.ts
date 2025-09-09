@@ -4,7 +4,6 @@
 export function demonstrateTwoFrameStory() {
   console.log('=== 2-FRAME COMPLETE STORY DEMONSTRATION ===\n')
   
-  const storyTitle = "A warrior's journey to the mountain peak"
   const theme = "epic fantasy, character vs dragon, respect and alliance"
   
   // Complete story that will be split into 2 frames
