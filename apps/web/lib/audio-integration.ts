@@ -32,7 +32,7 @@ export class FreeTTS {
   }
 
   // ResponsiveVoice TTS (Free tier available)
-  async generateSpeechResponsiveVoice(text: string): Promise<Blob> {
+  async generateSpeechResponsiveVoice(_text: string): Promise<Blob> {
     return new Promise((resolve) => {
       // This would use ResponsiveVoice library
       // For now, return a placeholder

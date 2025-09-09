@@ -114,45 +114,6 @@ export function useStoryGenerator() {
     return dialogueMatches ? dialogueMatches.map(d => d.replace(/"/g, '')) : []
   }
 
-  // Add audio to video using FREE services
-  const addAudioToVideo = async (videoUrl: string, dialogue: string[]): Promise<string> => {
-    if (dialogue.length === 0) return videoUrl
-
-    try {
-      // Import free TTS
-      const { FreeTTS, BrowserTTS } = await import('#lib/audio-integration')
-      
-      const freeTTS = new FreeTTS()
-      const browserTTS = new BrowserTTS()
-      
-      // Generate speech using free Google TTS
-      const fullText = dialogue.join(' ')
-      
-      try {
-        // Try Google TTS first (completely free)
-        await freeTTS.generateSpeechGoogle(fullText)
-        console.log('✅ Using Google TTS (Free)')
-      } catch {
-        console.log('Google TTS failed, trying browser TTS...')
-        // Fallback to browser TTS
-        await browserTTS.generateSpeech(fullText)
-        console.log('✅ Using Browser TTS (Free)')
-      }
-      
-      // Mock audio integration - in real implementation, combine video + audio
-      const audioEnhancedUrl = videoUrl.replace('.mp4', '_with_audio.mp4')
-      console.log('Audio generated successfully:', { 
-        originalVideo: videoUrl, 
-        audioEnhanced: audioEnhancedUrl,
-        dialogue: fullText 
-      })
-      return audioEnhancedUrl
-      
-    } catch (error) {
-      console.error('Free audio integration failed:', error)
-      return videoUrl // Return original video if audio fails
-    }
-  }
 
   // Create JSON-formatted prompt for VEO3 API with enhanced consistency
   const optimizePromptForVEO3 = (prompt: string, frameIndex: number = 0, totalFrames: number = 1, theme: string = ''): string => {
