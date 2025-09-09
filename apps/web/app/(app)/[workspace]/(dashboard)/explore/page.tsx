@@ -1233,14 +1233,40 @@ export default function ExplorePage() {
                                       Approve
                                     </Button>
                                   )}
-                                  <Button
-                                    size="xs"
-                                    colorScheme="blue"
-                                    variant="ghost"
-                                    onClick={() => handleRegenerateScene(scene.sceneNumber)}
-                                  >
-                                    Regenerate
-                                  </Button>
+                              <Button
+                                size="xs"
+                                colorScheme="blue"
+                                variant="ghost"
+                                onClick={() => handleRegenerateScene(scene.sceneNumber)}
+                              >
+                                Regenerate
+                              </Button>
+                              
+                              {/* Free TTS Button */}
+                              <Button
+                                size="xs"
+                                colorScheme="green"
+                                variant="ghost"
+                                onClick={() => {
+                                  // Use dialogues from scene if available, otherwise extract from prompt
+                                  const dialogues = scene.dialogues || scene.prompt.match(/"([^"]+)"/g)?.map(d => d.replace(/"/g, '')) || []
+                                  if (dialogues.length > 0) {
+                                    const utterance = new SpeechSynthesisUtterance(dialogues.join(' '))
+                                    utterance.rate = 0.9
+                                    utterance.pitch = 1
+                                    speechSynthesis.speak(utterance)
+                                  } else {
+                                    // Fallback: read the scene description
+                                    const description = scene.description.replace(/^.*? - /, '') // Remove prefix
+                                    const utterance = new SpeechSynthesisUtterance(description)
+                                    utterance.rate = 0.8
+                                    utterance.pitch = 1
+                                    speechSynthesis.speak(utterance)
+                                  }
+                                }}
+                              >
+                                🔊 Play
+                              </Button>
                                     {scene.isApproved && (
                                       <Button
                                         size="xs"
