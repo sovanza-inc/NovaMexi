@@ -1130,7 +1130,7 @@ export default function ExplorePage() {
                             </Text>
                           </Box> */}
                           
-                          {story.scenes.map((scene, index) => (
+                          {story.scenes.map((scene) => (
                           <Card
                             key={scene.sceneNumber}
                             p={3}
