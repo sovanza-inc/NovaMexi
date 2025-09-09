@@ -134,6 +134,10 @@ export function useStoryGenerator() {
         const dialogue = match.replace('She says:', '').trim()
         return `She looks directly at the camera with animated facial expressions, her mouth moving in sync with words, eyebrows raised with engagement, head nodding slightly as if speaking: "${dialogue}"`
       })
+      .replace(/The Yeti says:.*$/gm, (match) => {
+        const dialogue = match.replace('The Yeti says:', '').trim()
+        return `The Yeti looks directly at the camera with animated facial expressions, his mouth moving in sync with words, eyebrows raised with engagement, head nodding slightly as if speaking: "${dialogue}"`
+      })
       // Keep visual elements
       .replace(/Subtitles: Off/g, 'Visual storytelling focus')
       .trim()
@@ -143,6 +147,44 @@ export function useStoryGenerator() {
     
     // Truncate if too long
     visualPrompt = truncatePrompt(visualPrompt, 600)
+
+    // Determine character type and specific details
+    const isYeti = theme.includes('yeti') || visualPrompt.toLowerCase().includes('yeti')
+    const isVlog = theme.includes('vlog') || visualPrompt.toLowerCase().includes('vlog')
+    
+    // Create specific camera and technical details based on theme
+    let cameraDetails = {
+      angle: frameIndex === 0 ? 'establishing shot' : 'continuation shot',
+      movement: frameIndex === totalFrames - 1 ? 'dramatic close-up' : 'smooth transition',
+      lighting: 'consistent cinematic lighting'
+    }
+    
+    let technicalDetails = {
+      timeOfDay: 'consistent lighting and time of day across all frames',
+      lens: 'maintain consistent camera lens and focal length',
+      filmStock: 'consistent cinematic grading and color treatment',
+      audio: 'ambient sound consistent with setting and character',
+      background: 'maintain same background elements and environment',
+      subtitles: 'Off'
+    }
+    
+    // Customize for Yeti vlog style
+    if (isYeti && isVlog) {
+      cameraDetails = {
+        angle: frameIndex === 0 ? 'selfie-style handheld vlog' : 'slightly low tripod-like angle, vlog continuation shot',
+        movement: frameIndex === totalFrames - 1 ? 'dramatic close-up' : 'slightly shaky handheld, natural vlog movement',
+        lighting: 'cinematic cool blue with frosty highlights on steam and icicles'
+      }
+      
+      technicalDetails = {
+        timeOfDay: frameIndex === 0 ? 'early morning, pale mountain light streaming in' : 'early morning continuing, steady pale light through cave opening',
+        lens: frameIndex === 0 ? 'ultra-wide selfie lens, shallow depth of field' : 'wide lens capturing Yeti and cooking pot in frame',
+        filmStock: 'crisp digital cinematic vlog style, cool-toned grading',
+        audio: frameIndex === 0 ? 'ambient cave echoes, sizzling ice in pan, faint crunching snow underfoot' : 'faint bubbling crackle from icy pot, exaggerated crunching sound as he eats',
+        background: 'icy cave kitchen with icicle utensils, frozen salmon, and snow piles visible',
+        subtitles: 'Off'
+      }
+    }
 
     // Create JSON structure for better VEO3 API consistency
     const jsonPrompt = {
@@ -160,33 +202,23 @@ export function useStoryGenerator() {
       },
       visual: {
         description: visualPrompt,
-        camera: {
-          angle: frameIndex === 0 ? 'establishing shot' : 'continuation shot',
-          movement: frameIndex === totalFrames - 1 ? 'dramatic close-up' : 'smooth transition',
-          lighting: 'consistent cinematic lighting'
-        },
+        camera: cameraDetails,
         duration: 8,
         quality: 'cinematic, professional'
       },
       dialogue: dialogues.length > 0 ? {
-        expression: "character looks directly at camera with animated facial expressions",
+        expression: isYeti ? "slightly amused expression as he whispers" : "character looks directly at camera with animated facial expressions",
+        line: dialogues[0] || dialogues.join(' '),
         lines: dialogues,
         visualCues: dialogues.map(d => `Character mouth moving in sync with: "${d}"`)
       } : null,
       consistency: {
-        characterAppearance: 'maintain the same character design, clothing, and style throughout all frames',
-        settingContinuity: 'maintain the same environment and atmosphere across all frames',
-        colorPalette: 'consistent color scheme throughout all frames',
-        style: 'cinematic, professional video quality with consistent character appearance'
+        characterAppearance: isYeti ? 'fluffy white Yeti with icy blue eyes, same clothing and style' : 'maintain the same character design, clothing, and style throughout all frames',
+        settingContinuity: isYeti ? 'icy cave kitchen with icicles and frozen cooking setup' : 'maintain the same environment and atmosphere across all frames',
+        colorPalette: isYeti ? 'cool icy blues with frosty highlights' : 'consistent color scheme throughout all frames',
+        style: isYeti ? 'cinematic vlog style, professional video quality' : 'cinematic, professional video quality with consistent character appearance'
       },
-      technical: {
-        timeOfDay: 'consistent lighting and time of day across all frames',
-        lens: 'maintain consistent camera lens and focal length',
-        filmStock: 'consistent cinematic grading and color treatment',
-        audio: 'ambient sound consistent with setting and character',
-        background: 'maintain same background elements and environment',
-        subtitles: 'Off'
-      }
+      technical: technicalDetails
     }
 
     // Convert to JSON string for VEO3 API
@@ -217,21 +249,48 @@ export function useStoryGenerator() {
     let enhanced = prompt
     const enhancements = new Set<string>()
 
-    // Ensure character consistency - fix "same character" issue
-    if (enhanced.includes('character') && !enhanced.includes('the same character')) {
-      // Replace "A character" with "The same character"
-      enhanced = enhanced.replace(/A character/g, 'The same character')
-      // Replace "character's" with "the same character's" (possessive)
-      enhanced = enhanced.replace(/\bcharacter's\b/g, 'the same character\'s')
-      // Replace "character" with "the same character" but avoid double replacements
-      enhanced = enhanced.replace(/\bcharacter\b/g, 'the same character')
+    // Determine character name for natural references
+    let characterName = 'The protagonist'
+    let characterPronoun = 'the protagonist'
+    let characterPossessive = 'the protagonist\'s'
+    
+    if (enhanced.toLowerCase().includes('yeti')) {
+      characterName = 'The Yeti'
+      characterPronoun = 'the yeti'
+      characterPossessive = 'the yeti\'s'
+    } else if (enhanced.toLowerCase().includes('warrior')) {
+      characterName = 'The warrior'
+      characterPronoun = 'the warrior'
+      characterPossessive = 'the warrior\'s'
+    } else if (enhanced.toLowerCase().includes('panda')) {
+      characterName = 'The panda'
+      characterPronoun = 'the panda'
+      characterPossessive = 'the panda\'s'
+    } else if (enhanced.toLowerCase().includes('gentleman')) {
+      characterName = 'The gentleman'
+      characterPronoun = 'the gentleman'
+      characterPossessive = 'the gentleman\'s'
+    } else if (enhanced.toLowerCase().includes('bunny')) {
+      characterName = 'The bunny'
+      characterPronoun = 'the bunny'
+      characterPossessive = 'the bunny\'s'
     }
     
-    // Clean up any duplication issues that may have occurred
-    enhanced = enhanced.replace(/the the same character/g, 'the same character')
-    enhanced = enhanced.replace(/The the same character/g, 'The same character')
-    enhanced = enhanced.replace(/the same the same character/g, 'the same character')
-    enhanced = enhanced.replace(/The same the same character/g, 'The same character')
+    // Replace character references with natural character name
+    if (enhanced.includes('character')) {
+      // Replace "A character" with character name
+      enhanced = enhanced.replace(/A character/g, characterName)
+      // Replace "The character" with character name
+      enhanced = enhanced.replace(/The character/g, characterName)
+      // Replace "character's" with character possessive
+      enhanced = enhanced.replace(/\bcharacter's\b/g, characterPossessive)
+      // Replace "character" with character pronoun
+      enhanced = enhanced.replace(/\bcharacter\b/g, characterPronoun)
+      
+      // Clean up any "the the" duplications
+      enhanced = enhanced.replace(/the the /g, 'the ')
+      enhanced = enhanced.replace(/The the /g, 'The ')
+    }
 
     // Collect enhancements without duplicates
     if (enhanced.includes('snowy mountain') || enhanced.includes('winter')) {
@@ -327,21 +386,48 @@ export function useStoryGenerator() {
   const addFrameConsistency = useCallback((prompt: string, frameIndex: number, totalFrames: number): string => {
     let enhanced = prompt
 
-    // CRITICAL: Always ensure same character and setting - fix "same character" issue
-    if (!enhanced.includes('the same character')) {
-      // Replace "A character" with "The same character"
-      enhanced = enhanced.replace(/A character/g, 'The same character')
-      // Replace "character's" with "the same character's" (possessive)
-      enhanced = enhanced.replace(/\bcharacter's\b/g, 'the same character\'s')
-      // Replace "character" with "the same character" but avoid double replacements
-      enhanced = enhanced.replace(/\bcharacter\b/g, 'the same character')
+    // Determine character name for natural references
+    let characterName = 'The protagonist'
+    let characterPronoun = 'the protagonist'
+    let characterPossessive = 'the protagonist\'s'
+    
+    if (enhanced.toLowerCase().includes('yeti')) {
+      characterName = 'The Yeti'
+      characterPronoun = 'the yeti'
+      characterPossessive = 'the yeti\'s'
+    } else if (enhanced.toLowerCase().includes('warrior')) {
+      characterName = 'The warrior'
+      characterPronoun = 'the warrior'
+      characterPossessive = 'the warrior\'s'
+    } else if (enhanced.toLowerCase().includes('panda')) {
+      characterName = 'The panda'
+      characterPronoun = 'the panda'
+      characterPossessive = 'the panda\'s'
+    } else if (enhanced.toLowerCase().includes('gentleman')) {
+      characterName = 'The gentleman'
+      characterPronoun = 'the gentleman'
+      characterPossessive = 'the gentleman\'s'
+    } else if (enhanced.toLowerCase().includes('bunny')) {
+      characterName = 'The bunny'
+      characterPronoun = 'the bunny'
+      characterPossessive = 'the bunny\'s'
     }
     
-    // Clean up any duplication issues that may have occurred
-    enhanced = enhanced.replace(/the the same character/g, 'the same character')
-    enhanced = enhanced.replace(/The the same character/g, 'The same character')
-    enhanced = enhanced.replace(/the same the same character/g, 'the same character')
-    enhanced = enhanced.replace(/The same the same character/g, 'The same character')
+    // Replace character references with natural character name
+    if (enhanced.includes('character')) {
+      // Replace "A character" with character name
+      enhanced = enhanced.replace(/A character/g, characterName)
+      // Replace "The character" with character name
+      enhanced = enhanced.replace(/The character/g, characterName)
+      // Replace "character's" with character possessive
+      enhanced = enhanced.replace(/\bcharacter's\b/g, characterPossessive)
+      // Replace "character" with character pronoun
+      enhanced = enhanced.replace(/\bcharacter\b/g, characterPronoun)
+      
+      // Clean up any "the the" duplications
+      enhanced = enhanced.replace(/the the /g, 'the ')
+      enhanced = enhanced.replace(/The the /g, 'The ')
+    }
     
     // Add continuity markers
     if (frameIndex === 0) {
