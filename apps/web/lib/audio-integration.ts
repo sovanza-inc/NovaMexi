@@ -32,10 +32,12 @@ export class FreeTTS {
   }
 
   // ResponsiveVoice TTS (Free tier available)
-  async generateSpeechResponsiveVoice(_text: string): Promise<Blob> {
+  async generateSpeechResponsiveVoice(text: string): Promise<Blob> {
     return new Promise((resolve) => {
       // This would use ResponsiveVoice library
       // For now, return a placeholder
+      // Parameter 'text' is required for interface but not used in placeholder implementation
+      void text; // Suppress unused parameter warning
       resolve(new Blob(['audio data'], { type: 'audio/mp3' }))
     })
   }
