@@ -166,30 +166,12 @@ export function useStoryGenerator() {
       lighting: 'consistent cinematic lighting'
     }
     
-    let technicalDetails = {
-      timeOfDay: 'consistent lighting and time of day across all frames',
-      lens: 'maintain consistent camera lens and focal length',
-      filmStock: 'consistent cinematic grading and color treatment',
-      audio: 'ambient sound consistent with setting and character',
-      background: 'maintain same background elements and environment',
-      subtitles: 'Off'
-    }
-    
     // Customize for Yeti vlog style
     if (isYeti && isVlog) {
       cameraDetails = {
         angle: frameIndex === 0 ? 'selfie-style handheld vlog' : 'slightly low tripod-like angle, vlog continuation shot',
         movement: frameIndex === totalFrames - 1 ? 'dramatic close-up' : 'slightly shaky handheld, natural vlog movement',
         lighting: 'cinematic cool blue with frosty highlights on steam and icicles'
-      }
-      
-      technicalDetails = {
-        timeOfDay: frameIndex === 0 ? 'early morning, pale mountain light streaming in' : 'early morning continuing, steady pale light through cave opening',
-        lens: frameIndex === 0 ? 'ultra-wide selfie lens, shallow depth of field' : 'wide lens capturing Yeti and cooking pot in frame',
-        filmStock: 'crisp digital cinematic vlog style, cool-toned grading',
-        audio: frameIndex === 0 ? 'ambient cave echoes, sizzling ice in pan, faint crunching snow underfoot' : 'faint bubbling crackle from icy pot, exaggerated crunching sound as he eats',
-        background: 'icy cave kitchen with icicle utensils, frozen salmon, and snow piles visible',
-        subtitles: 'Off'
       }
     }
 
