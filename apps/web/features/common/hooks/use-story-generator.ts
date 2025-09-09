@@ -214,6 +214,12 @@ export function useStoryGenerator() {
       consistency: {
         character: isYeti ? 'fluffy white Yeti with icy blue eyes' : 'same character design throughout',
         setting: isYeti ? 'icy cave kitchen' : 'same environment across frames'
+      },
+      technical: {
+        timeOfDay: technicalDetails.timeOfDay,
+        lens: technicalDetails.lens,
+        audio: technicalDetails.audio,
+        background: technicalDetails.background
       }
     }
 
