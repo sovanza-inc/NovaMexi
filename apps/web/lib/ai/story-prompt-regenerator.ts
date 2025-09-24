@@ -38,7 +38,7 @@ export const generateAIPromptRegeneration = async (options: PromptRegenerationOp
         if (jsonMatch) {
           coreContent = jsonMatch[1];
         }
-      } catch (e) {
+      } catch {
         // If JSON parsing fails, use the original prompt
       }
     }
@@ -66,7 +66,7 @@ export const generateAIPromptRegeneration = async (options: PromptRegenerationOp
     // Add consistency enforcement instructions
     let consistencyInstructions = '';
     if (consistencyRules) {
-      consistencyInstructions = generateConsistencyPrompt(consistencyRules, sceneNumber);
+      consistencyInstructions = generateConsistencyPrompt(consistencyRules);
     }
 
     const userPrompt = `Please regenerate this story scene prompt with a fresh perspective while maintaining the core story elements and ensuring smooth continuity:

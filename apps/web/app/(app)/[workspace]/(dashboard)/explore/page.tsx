@@ -38,7 +38,7 @@ import { useVEO3API } from '#features/common/hooks/use-veo3-api'
 import { useVideoStorage } from '#features/common/hooks/use-video-storage'
 import { useStoryGenerator, type StoryScene } from '#features/common/hooks/use-story-generator'
 import { useShotstack } from '#features/common/hooks/use-shotstack'
-import { LuVideo, LuDownload, LuPlay, LuBookOpen, LuRefreshCw, LuWand, LuPencil, LuSave, LuX } from 'react-icons/lu'
+import { LuVideo, LuDownload, LuPlay, LuBookOpen, LuRefreshCw, LuWand, LuPencil, LuSave } from 'react-icons/lu'
 
 const hints = [
   'A fluffy panda in sunglasses dances on snowy peak',
