@@ -38,7 +38,7 @@ export const generateAIPromptRegeneration = async (options: PromptRegenerationOp
         if (jsonMatch) {
           coreContent = jsonMatch[1];
         }
-      } catch (e) {
+      } catch {
         // If JSON parsing fails, use the original prompt
       }
     }

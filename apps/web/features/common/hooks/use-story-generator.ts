@@ -808,7 +808,7 @@ export function useStoryGenerator() {
         if (jsonMatch) {
           coreContent = jsonMatch[1]
         }
-      } catch (e) {
+      } catch {
         // If JSON parsing fails, use the original prompt
       }
     }

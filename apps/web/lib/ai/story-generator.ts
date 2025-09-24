@@ -160,7 +160,7 @@ const extractThemeFromStory = (story: string, style: string): string => {
  * Generates a fallback story when AI fails
  */
 const generateFallbackStory = (options: StoryGenerationOptions): GeneratedStoryData => {
-  const { title, frameCount, style } = options;
+  const { style } = options;
   
   const fallbackStories: Record<string, string> = {
     creative: `A character begins their creative journey in a world filled with endless possibilities. The character explores new ideas and approaches each challenge with fresh perspective. The character says: 'I see things differently now!' as they discover innovative solutions. Their creativity inspires others around them, spreading joy and wonder. The character concludes: 'Imagination is the key to everything!'`,
