@@ -1,4 +1,7 @@
 import { useState, useCallback } from 'react'
+import { generateAIPromptRegeneration, type PromptRegenerationOptions } from '#lib/ai/story-prompt-regenerator'
+import { analyzeStoryConsistency, validateSceneConsistency, type ConsistencyRules } from '#lib/ai/story-consistency-analyzer'
+import { generateAIStory, analyzeStoryTitle, type GeneratedStoryData } from '#lib/ai/story-generator'
 
 export interface StoryScene {
   sceneNumber: number
@@ -24,7 +27,9 @@ export interface Story {
 export function useStoryGenerator() {
   const [story, setStory] = useState<Story | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isRegeneratingScene, setIsRegeneratingScene] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [consistencyRules, setConsistencyRules] = useState<ConsistencyRules | null>(null)
 
   const generateStory = useCallback(async (title: string, customDuration: number = 8): Promise<Story | null> => {
     if (!title.trim()) {
@@ -65,7 +70,7 @@ export function useStoryGenerator() {
       }
 
       // Generate a single flowing story divided into frames
-      const storyScenes = generateFlowingStory(title, frameCount)
+      const storyScenes = await generateFlowingStory(title, frameCount, customDuration)
       
       console.log('Generated story scenes:', {
         requestedFrames: frameCount,
@@ -83,6 +88,16 @@ export function useStoryGenerator() {
       }))
 
       setStory(generatedStory)
+      
+      // Analyze story consistency after generation
+      try {
+        const rules = await analyzeStoryConsistency(title, generatedStory.scenes)
+        setConsistencyRules(rules)
+        console.log('Story consistency rules generated:', rules)
+      } catch (error) {
+        console.error('Failed to analyze story consistency:', error)
+      }
+      
       return generatedStory
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate story'
@@ -93,12 +108,44 @@ export function useStoryGenerator() {
     }
   }, [])
 
+  // Generate a complete flowing story using AI
+  const generateCompleteStory = useCallback(async (title: string, frameCount: number, customDuration: number): Promise<GeneratedStoryData> => {
+    try {
+      // Analyze the title to determine style, character, and setting
+      const { style, characterType, setting } = analyzeStoryTitle(title);
+      
+      console.log('🎬 Generating AI story with:', { title, style, characterType, setting, frameCount, customDuration });
+
+      // Generate story using AI
+      const storyData = await generateAIStory({
+        title,
+        duration: customDuration,
+        frameCount,
+        style: style as any,
+        characterType,
+        setting
+      });
+
+      console.log('✅ AI story generated successfully:', { theme: storyData.theme, length: storyData.story.length });
+      return storyData;
+
+    } catch (error) {
+      console.error('❌ AI story generation failed, using fallback:', error);
+      
+      // Fallback to a simple story if AI fails
+      return {
+        story: `A character begins their journey in a mysterious setting, filled with wonder and possibility. The character moves through the environment with purpose, their actions creating a sense of adventure and discovery. As the story unfolds, the character encounters various challenges and opportunities that test their resolve. The character's determination and creativity help them navigate through each situation with grace and skill. The character's journey reaches a pivotal moment where they must make an important decision that will shape their destiny. The character's choice leads to a climactic scene filled with emotion and significance. The character's actions inspire others around them, creating a ripple effect of positive change. The character's journey concludes with a moment of reflection and growth, having learned valuable lessons along the way. The character stands proud, having completed their adventure and ready for whatever comes next.`,
+        theme: "adventure, character journey, growth and discovery"
+      };
+    }
+  }, [])
+
   // Generate a complete flowing story
-  const generateFlowingStory = (title: string, frameCount: number) => {
-    console.log('🎬 generateFlowingStory called with:', { title, frameCount })
+  const generateFlowingStory = useCallback(async (title: string, frameCount: number, customDuration: number) => {
+    console.log('🎬 generateFlowingStory called with:', { title, frameCount, customDuration })
     
-    // First, generate the complete story narrative
-    const completeStory = generateCompleteStory(title)
+    // First, generate the complete story narrative using AI
+    const completeStory = await generateCompleteStory(title, frameCount, customDuration)
     console.log('📖 Complete story generated:', completeStory)
     
     // Then divide it into flowing frames
@@ -106,7 +153,7 @@ export function useStoryGenerator() {
     console.log('🎞️ Frames created:', { requested: frameCount, actual: frames.length, frames })
     
     return frames
-  }
+  }, [generateCompleteStory])
 
   // Extract dialogue from prompts for potential audio addition
   const extractDialogue = (prompt: string): string[] => {
@@ -551,104 +598,6 @@ export function useStoryGenerator() {
     return enhanced
   }, [])
 
-  // Generate a complete flowing story
-  const generateCompleteStory = (title: string) => {
-    const storyTemplates = {
-      'warrior': {
-        story: "A lone character in a black fur cloak stands atop a snowy mountain peak, surveying the vast landscape below. The character says: 'I sense danger approaching!' as the wind howls through the mountains. The character spots a massive dragon emerging from the clouds, its scales shimmering with ancient power. The character draws their legendary sword, the blade humming with magical energy, and shouts: 'I will not back down!' The dragon swoops down, breathing fire that melts the snow around the character. The character dodges the flames and leaps onto the dragon's back, gripping its scales tightly. They engage in an epic aerial battle, the character striking with precision while the dragon twists and turns through the sky. The character yells: 'This ends now!' as they find the dragon's weak spot and deliver the decisive blow. Instead of continuing the fight, the dragon bows its head in respect, recognizing the character's courage and skill. The character sheathes their sword and places a hand on the dragon's snout, saying: 'We are allies now, not enemies.' Together, they watch the sunset over the mountains, the beginning of a legendary partnership.",
-        theme: "epic fantasy, character vs dragon, respect and alliance"
-      },
-      'panda': {
-        story: "A character wearing stylish black sunglasses stands confidently on a snowy mountain peak, the crisp mountain air creating a magical atmosphere. The character adjusts their sunglasses and begins to dance, their movements surprisingly graceful and fluid. The character says: 'Watch this amazing dance!' as they twirl and spin, creating a magical winter dance. Snowflakes swirl around the character as they perform, and the character exclaims: 'This is so much fun!' The character's dance becomes more energetic, incorporating martial arts moves and playful gestures. Other mountain animals gather to watch the performance, including curious mountain goats and a wise old eagle perched on a nearby rock. The character calls out: 'Come join me, friends!' as they continue dancing. The character's dance reaches a crescendo, and they strike a dramatic pose as the sun sets behind the mountains. The animals applaud with various sounds, and the character takes a bow, removing their sunglasses to reveal twinkling eyes. The character says: 'Thank you for watching!' and then invites the other animals to join in the dance, creating a joyful mountain celebration. As night falls, the character leads a procession of dancing animals down the mountain, their silhouettes dancing against the starry sky. The character whispers: 'What a perfect day!' as they dance into the night.",
-        theme: "playful character, mountain dance, animal friendship, winter magic"
-      },
-      'epic_journey': {
-        story: "A character begins their epic journey across a vast, mystical landscape, determined to reach the legendary Crystal Mountain. The character says: 'This is it, the adventure of a lifetime!' as they take their first steps into the unknown. The character encounters various challenges along the way - crossing treacherous rivers, climbing steep cliffs, and navigating through dark forests. The character says: 'I won't give up!' as they push through each obstacle with determination. The character meets wise mentors and helpful companions who guide them on their quest. The character says: 'Thank you for your wisdom!' as they learn valuable lessons about courage and perseverance. The character finally reaches the base of the Crystal Mountain, where they must face their greatest challenge yet. The character says: 'I'm ready for whatever comes next!' as they begin the final ascent. The character reaches the summit and discovers the legendary crystal, which grants them incredible power and wisdom. The character says: 'I've done it! I've completed my journey!' as they stand victorious at the peak, looking out over the beautiful landscape they've traversed.",
-        theme: "epic adventure, character journey, determination, growth and discovery"
-      },
-      'gentleman': {
-        story: "A distinguished character in a tailored suit stands in a futuristic laboratory, surrounded by holographic displays and advanced technology. The character carefully examines a small axolotl swimming in a glowing tank, its gills pulsing with bioluminescent light. The axolotl seems to recognize the character and swims to the glass, pressing its tiny face against it. The character smiles warmly and begins to explain the axolotl's unique regenerative abilities to an audience of scientists. As they speak, the axolotl's tank transforms into a miniature ecosystem with floating plants and gentle currents. The character demonstrates how the axolotl can regrow lost limbs, showing holographic projections of the process. The axolotl becomes excited and starts performing graceful underwater acrobatics, its movements synchronized with the character's explanations. The audience is captivated by both the character's knowledge and the axolotl's charm. The character concludes their presentation by gently releasing the axolotl into a larger, more natural habitat. The axolotl swims around joyfully, and the character watches with pride, having successfully shared the wonder of this remarkable creature with the world.",
-        theme: "scientific character, axolotl discovery, futuristic lab, knowledge sharing"
-      },
-      'bunny': {
-        story: "A character sits on a wooden stage, holding a miniature guitar. The character strums the guitar strings tentatively at first, creating soft, melodic notes that echo through a magical forest clearing. As the character gains confidence, they begin to play a cheerful tune, their movements swaying to the rhythm. The music attracts other forest animals - squirrels, birds, and even a wise old owl - who gather around to listen. The character's playing becomes more skilled, incorporating fingerpicking and strumming patterns. The forest animals start to dance and sway to the music, creating a joyful woodland concert. The character closes their eyes in concentration, lost in the music, and the guitar begins to glow with magical energy. Sparkles and musical notes float through the air, and the entire forest seems to come alive with the character's melody. The performance reaches a beautiful crescendo, and the character opens their eyes to see the enchanted forest celebrating their music. The character takes a bow, and the forest animals cheer, making the character blush with happiness.",
-        theme: "musical character, forest concert, magical music, animal audience"
-      },
-      'generic': {
-        story: "A character begins their journey in a mysterious setting, filled with wonder and possibility. The character moves through the environment with purpose, their actions creating a sense of adventure and discovery. As the story unfolds, the character encounters various challenges and opportunities that test their resolve. The character's determination and creativity help them navigate through each situation with grace and skill. The character's journey reaches a pivotal moment where they must make an important decision that will shape their destiny. The character's choice leads to a climactic scene filled with emotion and significance. The character's actions inspire others around them, creating a ripple effect of positive change. The character's journey concludes with a moment of reflection and growth, having learned valuable lessons along the way. The character stands proud, having completed their adventure and ready for whatever comes next.",
-        theme: "adventure, character journey, growth and discovery"
-      },
-      'cinematic_hero': {
-        story: "A mysterious figure in a flowing cloak stands on a windswept rooftop at sunset, the city sprawling below in golden light. The figure's eyes gleam with determination as they survey the urban landscape, their hand resting on the hilt of a gleaming sword. The character says: 'The time has come.' as lightning flashes in the distance, illuminating their silhouette against the stormy sky. They take a deep breath and whisper: 'I will not fail.' With a single bound, they leap from the rooftop, their cloak billowing behind them as they descend into the city below. The character says: 'Justice will be served!' as they land gracefully on the street below. The camera follows their heroic journey through the neon-lit streets, capturing every moment of their determined stride. The character says: 'This ends tonight!' as they approach their final destination, ready to face whatever challenges await.",
-        theme: "cinematic hero, urban adventure, dramatic lighting, heroic action"
-      },
-      'emotional_drama': {
-        story: "A young artist sits alone in their dimly lit studio, surrounded by half-finished paintings and scattered brushes. The soft glow of a single lamp casts dramatic shadows across their face as they stare at a blank canvas. The character says: 'I can do this.' as their hand trembles slightly while picking up a brush. Their eyes are filled with both fear and determination as they begin to paint, each stroke more confident than the last. The character says: 'This is my truth.' as their emotions flow onto the canvas in vibrant colors. The camera slowly circles around them, capturing the intensity of their creative process. The character says: 'I am an artist.' as they step back to admire their work. A single tear rolls down their cheek - not of sadness, but of pure artistic fulfillment. The character whispers: 'This is who I am.' as they look at their masterpiece with pride and satisfaction.",
-        theme: "emotional drama, artistic journey, personal growth, intimate storytelling"
-      },
-      'vlogger': {
-        story: "A character starts their day in a cozy mountain cabin, looking directly at the camera with an enthusiastic expression. The character says: 'Good morning everyone! Welcome to my daily vlog!' They gesture around their space, showing various items and activities. The character continues: 'Today I'm going to show you what I cook in a day!' They move to the kitchen area, pointing at ingredients and utensils. The character explains: 'First, let's start with breakfast - I'm making my famous mountain pancakes!' They demonstrate cooking techniques with animated movements. The character concludes: 'That's it for today's cooking adventure! Don't forget to like and subscribe!'",
-        theme: "vlogging, cooking, mountain life, daily routine"
-      },
-      'yeti_vlogger': {
-        story: "A fluffy white Yeti with icy blue eyes starts their day in a frosty mountain cave kitchen, holding the camera like a vlogger with a goofy, warm personality. The Yeti says: 'Alright guys, welcome to my kitchen… today I'm cooking up my favorite breakfast — Snow Flakes with extra cold milk!' The Yeti dramatically stirs a giant icy pot filled with pinecones, frozen salmon, and icicles, sprinkling snow as if it were seasoning. The Yeti says: 'Mmm… nothing like my famous gourmet Pinecone Soup… crunchy and, uh… kinda painful.' The Yeti takes a big spoonful, makes a disgusted face, then shrugs and keeps eating anyway. The Yeti concludes: 'That's it for today's cooking adventure! Don't forget to like and subscribe!'",
-        theme: "funny, relatable, winter cooking vlog parody, yeti character, mountain life"
-      },
-      'horror': {
-        story: "A character cautiously explores a dark, abandoned mansion, their flashlight casting eerie shadows on the walls. The character whispers: 'Is anyone there?' as they step through creaking floorboards. Suddenly, a door slams shut behind them, and they jump in fright. The character says: 'This place gives me the creeps!' as they continue deeper into the house. Mysterious sounds echo through the halls - footsteps, whispers, and the sound of something moving in the darkness. The character's heart races as they discover a hidden room filled with old photographs and strange symbols. The character gasps: 'What happened here?' as they realize they're not alone in the house.",
-        theme: "horror, mystery, suspense, supernatural"
-      },
-      'comedy': {
-        story: "A character attempts to cook a simple meal but everything goes hilariously wrong. The character says: 'How hard can it be to make toast?' as they accidentally set off the smoke alarm. They try to fix it by waving a towel, but only make it worse. The character exclaims: 'This is not going as planned!' as flour explodes everywhere, covering them from head to toe. They slip on a banana peel and slide across the kitchen floor, landing in a pile of dishes. The character laughs: 'Well, that was an adventure!' as they finally manage to make a sandwich, only to drop it on the floor. The character shrugs and says: 'At least I tried!'",
-        theme: "comedy, cooking fails, slapstick humor, everyday mishaps"
-      },
-      'sports': {
-        story: "A character trains for a big competition, pushing themselves to their limits. The character says: 'I can do this!' as they practice their moves over and over again. They sweat and breathe heavily, but never give up. The character encourages themselves: 'One more rep!' as they complete their training routine. On the day of the competition, the character feels nervous but determined. The character says: 'This is it, my moment!' as they step onto the field. They perform their best, giving it everything they have. The character celebrates: 'I did it!' as they achieve their goal, proving that hard work pays off.",
-        theme: "sports, training, competition, determination, achievement"
-      },
-      'romance': {
-        story: "A character prepares for a special date, carefully choosing their outfit and getting ready. The character says: 'I hope they like this!' as they look in the mirror, feeling nervous but excited. They meet their date at a beautiful garden, where flowers bloom and birds sing. The character says: 'You look amazing!' as they share a romantic moment together. They walk hand in hand through the garden, talking and laughing. The character whispers: 'This is perfect!' as they watch the sunset together. The character says: 'I'm so glad we met!' as they share a tender moment, creating memories that will last forever.",
-        theme: "romance, love, dating, relationships, emotional connection"
-      }
-    }
-
-    // Try to match the title with a story template
-    const titleLower = title.toLowerCase()
-    let selectedStory = storyTemplates['generic'] // default to generic
-
-    if (titleLower.includes('warrior') || titleLower.includes('dragon') || titleLower.includes('sword') || titleLower.includes('fantasy') || titleLower.includes('epic')) {
-      selectedStory = storyTemplates['warrior']
-    } else if (titleLower.includes('journey') || titleLower.includes('adventure') || titleLower.includes('quest') || titleLower.includes('crystal') || titleLower.includes('mountain')) {
-      selectedStory = storyTemplates['epic_journey']
-    } else if (titleLower.includes('panda') || titleLower.includes('fluffy') || titleLower.includes('dance') || titleLower.includes('playful') || titleLower.includes('cute')) {
-      selectedStory = storyTemplates['panda']
-    } else if (titleLower.includes('gentleman') || titleLower.includes('axolotl') || titleLower.includes('scientist') || titleLower.includes('lab') || titleLower.includes('research')) {
-      selectedStory = storyTemplates['gentleman']
-    } else if (titleLower.includes('bunny') || titleLower.includes('guitar') || titleLower.includes('music') || titleLower.includes('concert') || titleLower.includes('performance')) {
-      selectedStory = storyTemplates['bunny']
-    } else if (titleLower.includes('yeti') || titleLower.includes('vlog') && titleLower.includes('cooking')) {
-      selectedStory = storyTemplates['yeti_vlogger']
-    } else if (titleLower.includes('vlog') || titleLower.includes('cooking') || titleLower.includes('daily') || titleLower.includes('lifestyle')) {
-      selectedStory = storyTemplates['vlogger']
-    } else if (titleLower.includes('horror') || titleLower.includes('scary') || titleLower.includes('ghost') || titleLower.includes('haunted') || titleLower.includes('mystery')) {
-      selectedStory = storyTemplates['horror']
-    } else if (titleLower.includes('comedy') || titleLower.includes('funny') || titleLower.includes('laugh') || titleLower.includes('joke') || titleLower.includes('humor')) {
-      selectedStory = storyTemplates['comedy']
-    } else if (titleLower.includes('sports') || titleLower.includes('training') || titleLower.includes('competition') || titleLower.includes('athlete') || titleLower.includes('fitness')) {
-      selectedStory = storyTemplates['sports']
-    } else if (titleLower.includes('romance') || titleLower.includes('love') || titleLower.includes('date') || titleLower.includes('relationship') || titleLower.includes('romantic')) {
-      selectedStory = storyTemplates['romance']
-    }
-
-    return selectedStory
-  }
-
-  // Define interface for generated story data
-  interface GeneratedStoryData {
-    story: string
-    theme: string
-  }
-
   // Divide the complete story into flowing frames with proper story continuity
   const divideStoryIntoFrames = (storyData: GeneratedStoryData, frameCount: number) => {
     const { story, theme } = storyData
@@ -762,20 +711,165 @@ export function useStoryGenerator() {
     return generateStory(title, duration)
   }, [generateStory, story?.customDuration])
 
+  // Create AI-powered regenerations of prompts
+  const createAIVariedRegeneration = useCallback(async (originalPrompt: string, sceneNumber: number, totalFrames: number, title: string, story?: Story): Promise<string> => {
+    try {
+      // Determine variation type based on scene number for variety
+      const variationTypes = ['creative', 'dramatic', 'cinematic', 'emotional', 'action'] as const;
+      const variationType = variationTypes[sceneNumber % variationTypes.length];
+
+      // Get adjacent scenes for context
+      let previousScene: { sceneNumber: number; prompt: string; description: string } | undefined;
+      let nextScene: { sceneNumber: number; prompt: string; description: string } | undefined;
+
+      if (story) {
+        const currentIndex = story.scenes.findIndex(s => s.sceneNumber === sceneNumber);
+        
+        // Get previous scene
+        if (currentIndex > 0) {
+          const prev = story.scenes[currentIndex - 1];
+          previousScene = {
+            sceneNumber: prev.sceneNumber,
+            prompt: prev.prompt,
+            description: prev.description
+          };
+        }
+        
+        // Get next scene
+        if (currentIndex < story.scenes.length - 1) {
+          const next = story.scenes[currentIndex + 1];
+          nextScene = {
+            sceneNumber: next.sceneNumber,
+            prompt: next.prompt,
+            description: next.description
+          };
+        }
+      }
+
+      const options: PromptRegenerationOptions = {
+        originalPrompt,
+        sceneNumber,
+        totalFrames,
+        storyTitle: title,
+        variationType,
+        previousScene,
+        nextScene,
+        consistencyRules: story && consistencyRules ? consistencyRules : undefined
+      };
+
+      // Generate AI-powered regeneration
+      const aiRegeneratedPrompt = await generateAIPromptRegeneration(options);
+
+      // Validate consistency if rules are available
+      if (story && consistencyRules) {
+        const originalScene = story.scenes.find(s => s.sceneNumber === sceneNumber);
+        if (originalScene) {
+          const validation = validateSceneConsistency(originalScene, aiRegeneratedPrompt, consistencyRules);
+          
+          if (!validation.isConsistent) {
+            console.warn(`Scene ${sceneNumber} regeneration may have consistency issues:`, {
+              missingElements: validation.missingElements,
+              preservedElements: validation.preservedElements
+            });
+            
+            // If critical elements are missing, we could potentially retry or warn the user
+            if (validation.missingElements.length > 0) {
+              console.warn(`Missing critical elements: ${validation.missingElements.join(', ')}`);
+            }
+          } else {
+            console.log(`Scene ${sceneNumber} regeneration maintains consistency`);
+          }
+        }
+      }
+
+      // If the original was JSON format, recreate the JSON structure
+      if (originalPrompt.includes('"visual"') && originalPrompt.includes('"description"')) {
+        return optimizePromptForVEO3(aiRegeneratedPrompt, sceneNumber - 1, totalFrames, title);
+      } else {
+        return aiRegeneratedPrompt;
+      }
+    } catch (error) {
+      console.error('AI regeneration failed, falling back to simple variation:', error);
+      
+      // Fallback to simple variation if AI fails
+      return createFallbackVariation(originalPrompt, sceneNumber, totalFrames, title);
+    }
+  }, [optimizePromptForVEO3])
+
+  // Fallback function for when AI fails
+  const createFallbackVariation = useCallback((originalPrompt: string, sceneNumber: number, totalFrames: number, title: string): string => {
+    // Extract the core content from the original prompt (remove JSON structure if present)
+    let coreContent = originalPrompt
+    
+    // If it's a JSON prompt, extract the visual description
+    if (originalPrompt.includes('"visual"') && originalPrompt.includes('"description"')) {
+      try {
+        const jsonMatch = originalPrompt.match(/"description":\s*"([^"]+)"/)
+        if (jsonMatch) {
+          coreContent = jsonMatch[1]
+        }
+      } catch (e) {
+        // If JSON parsing fails, use the original prompt
+      }
+    }
+
+    // Create simple variations based on scene number and content
+    const variations = [
+      // Variation 1: Add more dynamic movement
+      coreContent.replace(/looks around/g, 'gazes around with wide eyes').replace(/talks:/g, 'exclaims with excitement:'),
+      
+      // Variation 2: Add more emotional depth
+      coreContent.replace(/satisfaction/g, 'overwhelming joy and pride').replace(/talks:/g, 'shouts with enthusiasm:'),
+      
+      // Variation 3: Add more cinematic elements
+      coreContent.replace(/looks around/g, 'slowly turns their head, taking in the magnificent view').replace(/talks:/g, 'whispers with awe:'),
+      
+      // Variation 4: Add more action
+      coreContent.replace(/looks around/g, 'raises their arms triumphantly and spins around').replace(/talks:/g, 'calls out loudly:'),
+      
+      // Variation 5: Add more detail
+      coreContent.replace(/looks around/g, 'pauses to admire the breathtaking scenery around them').replace(/talks:/g, 'says with a wide smile:')
+    ]
+
+    // Select variation based on scene number to ensure different results
+    const selectedVariation = variations[sceneNumber % variations.length]
+    
+    // Add some randomization to make it even more varied
+    const randomElements = [
+      ' with a sense of accomplishment',
+      ' while the wind gently blows',
+      ' as birds chirp in the distance',
+      ' with a confident smile',
+      ' as the light dances around them'
+    ]
+    
+    const randomElement = randomElements[Math.floor(Math.random() * randomElements.length)]
+    const variedContent = selectedVariation + randomElement
+
+    // Recreate the JSON structure if the original was JSON
+    if (originalPrompt.includes('"visual"') && originalPrompt.includes('"description"')) {
+      return optimizePromptForVEO3(variedContent, sceneNumber - 1, totalFrames, title)
+    } else {
+      return variedContent
+    }
+  }, [optimizePromptForVEO3])
+
   const regenerateScene = useCallback(async (sceneNumber: number, title: string, resetAllApprovals = true): Promise<void> => {
     if (!story) return
 
+    setIsRegeneratingScene(sceneNumber)
     try {
-      // Simulate AI scene regeneration
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
       const scene = story.scenes.find(s => s.sceneNumber === sceneNumber)
       if (!scene) return
 
+      // Use AI-powered regeneration
+      const originalPrompt = scene.prompt
+      const regeneratedPrompt = await createAIVariedRegeneration(originalPrompt, sceneNumber, story.scenes.length, title, story)
+
       const newScene: StoryScene = {
         sceneNumber,
-        description: `Regenerated scene ${sceneNumber} for ${title}`,
-        prompt: optimizePromptForVEO3(`Regenerated scene ${sceneNumber}: ${title} - fresh perspective, creative angle, enhanced quality, ${scene.duration} seconds`, sceneNumber - 1, story.scenes.length, 'regenerated'),
+        description: `AI Regenerated scene ${sceneNumber} for ${title}`,
+        prompt: regeneratedPrompt,
         duration: scene.duration,
         isApproved: false
       }
@@ -798,9 +892,11 @@ export function useStoryGenerator() {
         }
       })
     } catch (err) {
-      console.error('Scene regeneration error:', err)
+      console.error('AI Scene regeneration error:', err)
+    } finally {
+      setIsRegeneratingScene(null)
     }
-  }, [])
+  }, [createAIVariedRegeneration])
 
   const approveScene = useCallback((sceneNumber: number): void => {
     setStory(prev => {
@@ -846,6 +942,19 @@ export function useStoryGenerator() {
     setError(null)
   }, [])
 
+  // Manually analyze consistency for existing stories
+  const analyzeStoryConsistencyManually = useCallback(async (): Promise<void> => {
+    if (!story) return
+    
+    try {
+      const rules = await analyzeStoryConsistency(story.title, story.scenes)
+      setConsistencyRules(rules)
+      console.log('Story consistency rules updated:', rules)
+    } catch (error) {
+      console.error('Failed to analyze story consistency:', error)
+    }
+  }, [story])
+
   const canGenerateVideo = useCallback((): boolean => {
     return story !== null && story.scenes.some(scene => scene.isApproved)
   }, [story])
@@ -878,10 +987,39 @@ export function useStoryGenerator() {
     }
   }, [story])
 
+  const editScenePrompt = useCallback((sceneNumber: number, newPrompt: string): void => {
+    setStory(prev => {
+      if (!prev) return prev
+      const updatedScenes = prev.scenes.map(scene => 
+        scene.sceneNumber === sceneNumber 
+          ? { ...scene, prompt: newPrompt, isApproved: false } // Reset approval when editing
+          : scene
+      )
+      
+      return {
+        ...prev,
+        scenes: updatedScenes,
+        isApproved: false // Reset global approval when any scene is edited
+      }
+    })
+  }, [])
+
+  const editStoryTitle = useCallback((newTitle: string): void => {
+    setStory(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        title: newTitle
+      }
+    })
+  }, [])
+
   return {
     story,
     isGenerating,
+    isRegeneratingScene,
     error,
+    consistencyRules,
     generateStory,
     regenerateStory,
     regenerateScene,
@@ -893,5 +1031,8 @@ export function useStoryGenerator() {
     clearError,
     canGenerateVideo,
     updateSceneVideoUrl,
+    editScenePrompt,
+    editStoryTitle,
+    analyzeStoryConsistencyManually,
   }
 }

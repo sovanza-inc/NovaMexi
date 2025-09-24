@@ -38,7 +38,7 @@ import { useVEO3API } from '#features/common/hooks/use-veo3-api'
 import { useVideoStorage } from '#features/common/hooks/use-video-storage'
 import { useStoryGenerator, type StoryScene } from '#features/common/hooks/use-story-generator'
 import { useShotstack } from '#features/common/hooks/use-shotstack'
-import { LuVideo, LuDownload, LuPlay, LuBookOpen, LuRefreshCw, LuWand } from 'react-icons/lu'
+import { LuVideo, LuDownload, LuPlay, LuBookOpen, LuRefreshCw, LuWand, LuPencil, LuSave, LuX } from 'react-icons/lu'
 
 const hints = [
   'A fluffy panda in sunglasses dances on snowy peak',
@@ -86,9 +86,17 @@ export default function ExplorePage() {
   const [editingPrompt, setEditingPrompt] = useState('')
   const [isRegeneratingVideo, setIsRegeneratingVideo] = useState(false)
   
+  // Edit modals state
+  const { isOpen: isEditStoryOpen, onOpen: onEditStoryOpen, onClose: onEditStoryClose } = useDisclosure()
+  const { isOpen: isEditSceneOpen, onOpen: onEditSceneOpen, onClose: onEditSceneClose } = useDisclosure()
+  const [editingStoryTitle, setEditingStoryTitle] = useState('')
+  const [editingScenePrompt, setEditingScenePrompt] = useState('')
+  const [editingSceneNumber, setEditingSceneNumber] = useState<number | null>(null)
+  
   const {
     story,
     isGenerating: isGeneratingStory,
+    isRegeneratingScene,
     error: storyError,
     generateStory,
     regenerateStory,
@@ -101,6 +109,8 @@ export default function ExplorePage() {
     clearError: clearStoryError,
     canGenerateVideo,
     updateSceneVideoUrl,
+    editScenePrompt,
+    editStoryTitle,
   } = useStoryGenerator()
 
 
@@ -279,8 +289,8 @@ export default function ExplorePage() {
     try {
       await regenerateScene(sceneNumber, story.title)
       toast({
-        title: 'Scene Regenerated',
-        description: `Scene ${sceneNumber} has been regenerated. Please review and approve.`,
+        title: 'Scene AI Regenerated',
+        description: `Scene ${sceneNumber} has been regenerated using AI. Please review and approve.`,
         status: 'info',
         duration: 3000,
         isClosable: true,
@@ -512,6 +522,51 @@ export default function ExplorePage() {
     const genericPrompt = convertToGenericPrompt(scene.prompt)
     setEditingPrompt(genericPrompt)
     onOpen()
+  }
+
+  // Open edit story title modal
+  const handleOpenEditStory = () => {
+    if (story) {
+      setEditingStoryTitle(story.title)
+      onEditStoryOpen()
+    }
+  }
+
+  // Save edited story title
+  const handleSaveStoryTitle = () => {
+    if (editingStoryTitle.trim()) {
+      editStoryTitle(editingStoryTitle.trim())
+      onEditStoryClose()
+      toast({
+        title: 'Story Title Updated',
+        description: 'The story title has been updated successfully.',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      })
+    }
+  }
+
+  // Open edit scene prompt modal
+  const handleOpenEditScene = (scene: StoryScene) => {
+    setEditingSceneNumber(scene.sceneNumber)
+    setEditingScenePrompt(scene.prompt)
+    onEditSceneOpen()
+  }
+
+  // Save edited scene prompt
+  const handleSaveScenePrompt = () => {
+    if (editingSceneNumber && editingScenePrompt.trim()) {
+      editScenePrompt(editingSceneNumber, editingScenePrompt.trim())
+      onEditSceneClose()
+      toast({
+        title: 'Scene Prompt Updated',
+        description: `Frame ${editingSceneNumber} prompt has been updated. Scene approval has been reset.`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      })
+    }
   }
 
   // Regenerate video for a specific scene
@@ -1090,9 +1145,20 @@ export default function ExplorePage() {
                   <Box>
                     
                     <HStack justify="space-between" mb={3}>
-                      <Text fontWeight="medium" fontSize="sm" color="gray.600">
-                        Generated Story: {story.title}
-                      </Text>
+                      <HStack spacing={3}>
+                        <Text fontWeight="medium" fontSize="sm" color="gray.600">
+                          Generated Story: {story.title}
+                        </Text>
+                        <Button
+                          size="xs"
+                          colorScheme="blue"
+                          variant="ghost"
+                          onClick={handleOpenEditStory}
+                          leftIcon={<Icon as={LuPencil} />}
+                        >
+                          Edit Title
+                        </Button>
+                      </HStack>
                       <HStack spacing={2}>
                         <Badge colorScheme="green" variant="subtle">
                           {story.totalDuration}s
@@ -1181,6 +1247,15 @@ export default function ExplorePage() {
                               {/* Scene Action Buttons */}
                               <HStack spacing={2} w="full" justify="flex-end">
                                 <HStack spacing={1}>
+                                  <Button
+                                    size="xs"
+                                    colorScheme="purple"
+                                    variant="ghost"
+                                    onClick={() => handleOpenEditScene(scene)}
+                                    leftIcon={<Icon as={LuPencil} />}
+                                  >
+                                    Edit
+                                  </Button>
                                   {!scene.isApproved && (
                                     <Button
                                       size="xs"
@@ -1196,6 +1271,9 @@ export default function ExplorePage() {
                                 colorScheme="blue"
                                 variant="ghost"
                                 onClick={() => handleRegenerateScene(scene.sceneNumber)}
+                                isLoading={isRegeneratingScene === scene.sceneNumber}
+                                loadingText="AI Regenerating..."
+                                isDisabled={isRegeneratingScene !== null}
                               >
                                 Regenerate
                               </Button>
@@ -1795,6 +1873,97 @@ export default function ExplorePage() {
                 loadingText="Regenerating..."
               >
                 Regenerate Video
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Edit Story Title Modal */}
+      <Modal isOpen={isEditStoryOpen} onClose={onEditStoryClose} size="md">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Edit Story Title</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <Box>
+                <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.600">
+                  Story Title:
+                </Text>
+                <Input
+                  value={editingStoryTitle}
+                  onChange={(e) => setEditingStoryTitle(e.target.value)}
+                  placeholder="Enter your story title..."
+                  size="md"
+                />
+              </Box>
+              
+              <Box>
+                <Text fontSize="sm" color="gray.500">
+                  💡 Edit the story title to better reflect your story content.
+                </Text>
+              </Box>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack spacing={3}>
+              <Button variant="ghost" onClick={onEditStoryClose}>
+                Cancel
+              </Button>
+              <Button
+                colorScheme="blue"
+                onClick={handleSaveStoryTitle}
+                leftIcon={<Icon as={LuSave} />}
+                isDisabled={!editingStoryTitle.trim()}
+              >
+                Save Title
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Edit Scene Prompt Modal */}
+      <Modal isOpen={isEditSceneOpen} onClose={onEditSceneClose} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Edit Frame {editingSceneNumber} Prompt</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <Box>
+                <Text mb={2} fontWeight="medium" fontSize="sm" color="gray.600">
+                  Frame Prompt:
+                </Text>
+                <Textarea
+                  value={editingScenePrompt}
+                  onChange={(e) => setEditingScenePrompt(e.target.value)}
+                  placeholder="Enter your custom prompt for this frame..."
+                  rows={6}
+                  resize="vertical"
+                />
+              </Box>
+              
+              <Box>
+                <Text fontSize="sm" color="gray.500">
+                  💡 Edit the prompt to change how this frame will be generated. The scene approval will be reset when you save changes.
+                </Text>
+              </Box>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack spacing={3}>
+              <Button variant="ghost" onClick={onEditSceneClose}>
+                Cancel
+              </Button>
+              <Button
+                colorScheme="purple"
+                onClick={handleSaveScenePrompt}
+                leftIcon={<Icon as={LuSave} />}
+                isDisabled={!editingScenePrompt.trim()}
+              >
+                Save Prompt
               </Button>
             </HStack>
           </ModalFooter>
