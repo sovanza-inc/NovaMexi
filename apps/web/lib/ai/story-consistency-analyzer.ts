@@ -207,7 +207,7 @@ const createFallbackConsistencyRules = (storyTitle: string, scenes: StoryScene[]
 /**
  * Generates consistency enforcement prompt for AI regeneration
  */
-export const generateConsistencyPrompt = (rules: ConsistencyRules, _sceneNumber: number): string => {
+export const generateConsistencyPrompt = (rules: ConsistencyRules): string => {
   const criticalElements = rules.elements.filter(e => e.importance === 'critical');
   const highElements = rules.elements.filter(e => e.importance === 'high');
   
